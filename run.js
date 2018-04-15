@@ -2,6 +2,7 @@ var tcpp = require('tcp-ping');
 var nodemailer = require('nodemailer');
 
 var version = require('./package.json').version;
+var debug = process.env.DEBUG;
 
 var transporter = nodemailer.createTransport({
   service: process.env.EMAIL_CLIENT,
@@ -28,7 +29,9 @@ function probeAll() {
  */
 function probe(name, ip, port) {
   tcpp.probe(ip, port, function(err, available) {
-    console.log(`${name} (${ip}:${port}): ${available ? 'online' : 'offline'}`);
+    if (debug) {
+      console.log(`${name} (${ip}:${port}): ${available ? 'online' : 'offline'}`);
+    }
     if (!available) {
       sendEmail(name);
     }
@@ -37,9 +40,12 @@ function probe(name, ip, port) {
 
 /**
  * Send an email that a server is offline
- * @param  {String} var Name of the server that has gone offline
+ * @param  {String} name Name of the server that has gone offline
  */
 function sendEmail(name) {
+  if (debug) {
+    console.log(`[${new Date()}] Sending email`);
+  }
   var mailOptions = {
     from: process.env.EMAIL_CLIENT,
     to: process.env.EMAIL_RECIPIENT,
@@ -51,9 +57,9 @@ function sendEmail(name) {
 
   transporter.sendMail(mailOptions, function(error, info){
     if (error) {
-      console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
+      console.log(`[${new Date()}] Error sending email: ${error}`);
+    } else if (debug) {
+      console.log(`[${new Date()}] Email sent: ${info.response}`);
     }
   });
 }
@@ -63,6 +69,8 @@ probeAll();
 
 var minutes = process.env.PROBE_TIME, the_interval = minutes * 60 * 1000;
 setInterval(function() {
-  console.log(`\n[${new Date()}] Checking`);
+  if (debug) {
+    console.log(`\n[${new Date()}] Checking`);
+  }
   probeAll();
 }, the_interval);

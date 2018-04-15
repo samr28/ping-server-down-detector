@@ -22,8 +22,8 @@ Run scripts make things much easier. You can place all of your environment varia
 # Default: 5
 export PROBE_TIME=5
 
-# Debug mode off
-export DEBUG=0
+# Uncomment to turn on debug mode
+#export DEBUG=1
 
 export EMAIL_CLIENT=gmail
 export EMAIL_ADDRESS=

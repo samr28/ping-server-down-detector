@@ -1,5 +1,6 @@
 var tcpp = require('tcp-ping');
 var nodemailer = require('nodemailer');
+var request = require('request');
 
 var version = require('./package.json').version;
 
@@ -11,6 +12,7 @@ if (process.env.DEBUG == 1) {
 }
 
 var servers = [];
+var miners = [];
 
 servers[0] = {
   name: 'sam-server-2',
@@ -31,6 +33,12 @@ servers[2] = {
   sentMail: false
 };
 
+miners[0] = {
+  name: 'miner1',
+  api: process.env.MINER1_API,
+  sentMail = false
+};
+
 var transporter = nodemailer.createTransport({
   service: process.env.EMAIL_CLIENT,
   auth: {
@@ -46,6 +54,9 @@ function probeAll() {
   servers.forEach(function (server) {
     probe(server);
   });
+  miners.forEach(function (server) {
+    probeMiner(server);
+  })
 }
 
 /**
@@ -66,6 +77,23 @@ function probe(server) {
   });
 }
 
+/**
+ * Ping a single miner and call sendEmail if offline
+ * @param  {Object} server Server to ping
+ */
+function probeMiner(server) {
+  request(server.api, function (error, response, body) {
+  if (!error && response.statusCode == 200) {
+     var data = JSON.parse(body);
+     if (data.workersOffline > 0 && !server.sentMail) {
+       sendEmailOffline(server);
+     }
+     if (data.workersOffline == 0 && server.sentMail) {
+       sendEmailOnline(server);
+     }
+  }
+})
+}
 
 /**
  * Send an email that a server has come back online

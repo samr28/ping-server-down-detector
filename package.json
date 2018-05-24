@@ -5,6 +5,7 @@
   "main": "run.js",
   "dependencies": {
     "nodemailer": "^4.4.2",
+    "request": "^2.87.0",
     "tcp-ping": "^0.1.1"
   },
   "devDependencies": {},

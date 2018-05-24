@@ -83,17 +83,17 @@ function probe(server) {
  */
 function probeMiner(server) {
   request(server.api, function (error, response, body) {
+  if (!error && response.statusCode == 200) {
+    var data = JSON.parse(body);
     if (debug) {
       console.log(`${server.name} (${server.name}: [Online:${data.workersOnline}] [Offline:${data.workersOffline}]`);
     }
-  if (!error && response.statusCode == 200) {
-     var data = JSON.parse(body);
-     if (data.workersOffline > 0 && !server.sentMail) {
-       sendEmailOffline(server);
-     }
-     if (data.workersOffline == 0 && server.sentMail) {
-       sendEmailOnline(server);
-     }
+   if (data.workersOffline > 0 && !server.sentMail) {
+     sendEmailOffline(server);
+   }
+   if (data.workersOffline == 0 && server.sentMail) {
+     sendEmailOnline(server);
+   }
   }
 })
 }

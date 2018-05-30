@@ -1,6 +1,7 @@
 var tcpp = require('tcp-ping');
 var nodemailer = require('nodemailer');
 var request = require('request');
+var http = require('http');
 
 var version = require('./package.json').version;
 var m = require('./miner.js');
@@ -63,6 +64,17 @@ var transporter = nodemailer.createTransport({
 });
 
 /**
+ * Get data on all servers
+ * @return {object} Data
+ */
+function getAllData() {
+  var allData = {};
+  allData.servers = servers;
+  allData.miners = miners;
+  return allData;
+}
+
+/**
  * Ping all of the servers
  */
 function probeAll() {
@@ -114,10 +126,6 @@ function probeMiner(server) {
   })
 }
 
-/**
- * Probe a miner and check that it has a good hash hashrate
- * @param  {Object} server Server to check
- */
 function probeMinerHR(server) {
   if (server.isMiner) {
     m.getStats(function (data) {
@@ -138,10 +146,6 @@ function probeMinerHR(server) {
   }
 }
 
-/**
- * Send an email that a miner has a bad hash rate or old beat
- * @param  {Object} server Server that has a bad hash rate or old beat
- */
 function sendEmailMiner(server) {
   if (debug) {
     console.log(`[${new Date()}] Sending miner email.`);
@@ -230,6 +234,10 @@ function sendEmailOffline(server) {
 
 console.log(`[${new Date()}] Starting`);
 probeAll();
+http.createServer(function (req, res) {
+  res.write(JSON.stringify(getAllData()));
+  res.end();
+}).listen(process.env.WEB_PORT);
 
 var minutes = process.env.PROBE_TIME, the_interval = minutes * 60 * 1000;
 setInterval(function() {

@@ -30,6 +30,8 @@ export EMAIL_ADDRESS=
 export EMAIL_PASSWORD=
 export EMAIL_RECIPIENT=
 
+export WEB_PORT=8080
+
 export SAM_SERVER_2_IP=
 export SAM_SERVER_2_PORT=
 
@@ -38,6 +40,14 @@ export ORANGEPIONE_2_PORT=
 
 export ORANGEPIONE_3_IP=
 export ORANGEPIONE_3_PORT=
+
+export MINER1_API=http://noobpool.com/api/accounts/0x000000000000000000000000
+# Expect the hashrate to always be above LOW_HR
+export LOW_HR=
+# 10 mins max
+export MAX_BEAT_TIME=600000
+
+cd /home/sam/Documents/ping-server-down-detector/
 
 npm install
 

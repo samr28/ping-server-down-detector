@@ -168,7 +168,7 @@ function probeMinerHR(server) {
   if (server.isMiner) {
     m.getStats(function (data) {
       server.stats = data;
-      server.status.lowHR = data.currentHashrate < process.env.LOW_HR ? true : false;
+      server.status.lowHR = data.longHashrate < process.env.LOW_HR ? true : false;
       server.status.badBeat = ((new Date).getTime()) - data.lastBeat > process.env.MAX_BEAT_TIME ? true : false;
       if (server.status.lowHR || server.status.badBeat) {
         if (!server.sentHRMail && !server.isOffline) {
@@ -197,8 +197,8 @@ function sendEmailMiner(server) {
     to: process.env.EMAIL_RECIPIENT,
     subject: `${server.name} is having problems!`,
     text: `${server.name} started having problems around: ${new Date()}
-    \n\nCurrent (30m) hashrate is ${server.stats.currentHashrate} MH. Should be > ${process.env.LOW_HR}.
-    \nLong (3h) hashrate is ${server.stats.longHashrate} MH.
+    \n\nLong (3h) hashrate is ${server.stats.longHashrate} MH. Should be > ${process.env.LOW_HR}.
+    \nCurrent (30m) hashrate is ${server.stats.currentHashrate} MH.
     \nLast beat was ${new Date(server.stats.lastBeat)}.
     \n\nChecking every ${process.env.PROBE_TIME} mins
     \n\nping-server-down-detector v${version} - https://github.com/samr28/ping-server-down-detector`

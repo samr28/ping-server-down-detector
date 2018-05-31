@@ -321,6 +321,11 @@ app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/api', function(req, res){
+  res.write(JSON.stringify(getAllData()));
+  res.end();
+});
+
 // Update inner html and refresh when buttons are clicked
 io.on('connection', function(socket){
   refreshAll();

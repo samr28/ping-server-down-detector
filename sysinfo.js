@@ -34,7 +34,11 @@ function updateData(callback) {
     },
     function (cb) {
       si.cpuTemperature(function (info) {
-        data.cpuTemp = info;
+        if (data.cpuTemp < 0) {
+          data.cpuTemp = info * 1000;
+        } else {
+          data.cpuTemp = info;
+        }
         cb();
       });
     },
@@ -87,7 +91,7 @@ http.listen(process.env.WEB_PORT, function(){
   console.log(`listening on *:${process.env.WEB_PORT}`);
 });
 
-var minutes = process.env.PROBE_TIME, the_interval = minutes * 60 * 1000;
+var minutes = process.env.UPDATE_TIME, the_interval = minutes * 60 * 1000;
 setInterval(function() {
   if (debug) {
     console.log(`\n[${new Date()}] Update info`);

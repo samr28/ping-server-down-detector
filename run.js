@@ -120,7 +120,6 @@ function allServersOnline() {
  * @param  {Function} cb Callback
  */
 function updateAllSysinfo(cb) {
-  console.log('update sysinfo');
   servers.forEach(function (server) {
     if (!server.isOffline) {
       console.log(`http://${server.ip}:${server.sysinfoPort}/api`);
@@ -334,7 +333,7 @@ function generateHTML() {
                 ${cpu.cores} Cores @ ${cpu.speed} GHz
               </div>
               <div class="col-sm">
-                <i class="fas fa-thermometer"></i> ${cpu.temp * 1000} C
+                <i class="fas fa-thermometer"></i> ${cpu.temp} C
               </div>
             </div>
           </li>

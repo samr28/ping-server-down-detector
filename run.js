@@ -21,6 +21,8 @@ var miners = [];
 servers[0] = {
   name: 'sam-server-2',
   isMiner: false,
+  sysinfo: {},
+  sysinfoPort: process.env.SAM_SERVER_2_SYSINFO_PORT,
   ip: process.env.SAM_SERVER_2_IP,
   port: process.env.SAM_SERVER_2_PORT,
   isOffline: false
@@ -28,6 +30,8 @@ servers[0] = {
 servers[1] = {
   name: 'orangepione-2',
   isMiner: false,
+  sysinfo: {},
+  sysinfoPort: process.env.ORANGEPIONE_2_SYSINFO_PORT,
   ip: process.env.ORANGEPIONE_2_IP,
   port: process.env.ORANGEPIONE_2_PORT,
   isOffline: false
@@ -35,6 +39,8 @@ servers[1] = {
 servers[2] = {
   name: 'orangepione-3',
   isMiner: false,
+  sysinfo: {},
+  sysinfoPort: process.env.ORANGEPIONE_3_SYSINFO_PORT,
   ip: process.env.ORANGEPIONE_3_IP,
   port: process.env.ORANGEPIONE_3_PORT,
   isOffline: false
@@ -77,7 +83,8 @@ function getAllData() {
   servers.forEach(function (server) {
     allData.servers.push({
       name: server.name,
-      isOffline: server.isOffline
+      isOffline: server.isOffline,
+      sysinfo: server.sysinfo
     });
   });
   miners.forEach(function (server) {
@@ -106,6 +113,30 @@ function allServersOnline() {
     }
   });
   return true;
+}
+
+/**
+ * Update sysinfo for all servers
+ * @param  {Function} cb Callback
+ */
+function updateAllSysinfo(cb) {
+  console.log('update sysinfo');
+  servers.forEach(function (server) {
+    if (!server.isOffline) {
+      console.log(`http://${server.ip}:${server.sysinfoPort}/api`);
+      request(`http://${server.ip}:${server.sysinfoPort}/api`, function (error, response, body) {
+        if (error) {
+          console.log(`${server.name} (http://${server.ip}:${server.sysinfoPort}/api) get sysinfo error: ${error}`);
+        } else {
+          var data = JSON.parse(body);
+          server.sysinfo = data;
+          if (cb) {
+            cb();
+          }
+        }
+      });
+    }
+  });
 }
 
 /**
@@ -285,8 +316,44 @@ function generateHTML() {
   data.servers.forEach(function (server) {
     html += `
       <div class="card">
-        <h5 class="card-header"><span class="badge badge-pill badge-${server.isOffline ? 'danger' : 'success'}">${server.isOffline ? 'Offline' : 'Online'}</span> ${server.name}</h5>
-      </div>`;
+        <h5 class="card-header"><span class="badge badge-pill badge-${server.isOffline ? 'danger' : 'success'}">${server.isOffline ? 'Offline' : 'Online'}</span> ${server.name}</h5>`;
+      if (Object.keys(server.sysinfo).length !== 0) {
+        var cpu = server.sysinfo.cpu;
+        cpu.temp = server.sysinfo.cpuTemp.main;
+        var cpuLoad = server.sysinfo.cpuLoad;
+        var mem = server.sysinfo.mem;
+        var storage = server.sysinfo.storage[0];
+        html += `
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <div class="row">
+              <div class="col-sm">
+                ${cpu.manufacturer} - ${cpu.brand}
+              </div>
+              <div class="col-sm">
+                ${cpu.cores} Cores @ ${cpu.speed} GHz
+              </div>
+              <div class="col-sm">
+                <i class="fas fa-thermometer"></i> ${cpu.temp * 1000} C
+              </div>
+            </div>
+          </li>
+          <li class="list-group-item">
+            <div class="row">
+              <div class="col-sm">
+                Average CPU load: ${cpuLoad.avgload}%
+              </div>
+              <div class="col-sm">
+                <i class="fas fa-memory"></i> ${Number(((mem.used/mem.total) * 100).toFixed(2))}% used (${Number((mem.used / 1000000).toFixed(2))} / ${Number((mem.total / 1000000).toFixed(2))} MB)
+              </div>
+              <div class="col-sm">
+                <i class="fas fa-hdd"></i> ${Number(((storage.used/storage.size) * 100).toFixed(2))}% used (${Number((storage.used / 1000000000).toFixed(2))} / ${Number((storage.size / 1000000000).toFixed(2))} GB)
+              </div>
+            </div>
+          </li>
+        </ul>`;
+      }
+      html += `</div>`;
   });
   data.miners.forEach(function (server) {
     html += `
@@ -315,6 +382,7 @@ console.log(`[${new Date()}] Starting v${version}`);
 
 // Initial probe
 probeAll();
+updateAllSysinfo();
 
 // Serve index
 app.get('/', function(req, res){

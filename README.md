@@ -47,10 +47,31 @@ export LOW_HR=
 # 10 mins max
 export MAX_BEAT_TIME=600000
 
-cd /home/sam/Documents/ping-server-down-detector/
+cd /home/USER/Documents/ping-server-down-detector/
 
 npm install
 
 forever start -l /home/USER/logs/ping-server-down-detector.log -a run.js
+
+```
+
+## Creating a run script for sysinfo
+```
+#!/bin/bash
+
+# Update data every UPDATE_TIME mins
+# Default: 60
+export UPDATE_TIME=60
+
+# Uncomment to turn on debug mode
+# export DEBUG=1
+
+export WEB_PORT=3001
+
+cd /home/USER/Documents/ping-server-down-detector/
+
+npm install
+
+forever start -l /home/USER/logs/sysinfo.log -a sysinfo.js
 
 ```

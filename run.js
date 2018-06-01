@@ -327,7 +327,7 @@ function generateHTML() {
           <li class="list-group-item">
             <div class="row">
               <div class="col-sm">
-                ${cpu.manufacturer} - ${cpu.brand}
+                ${cpu.manufacturer} ${cpu.brand}
               </div>
               <div class="col-sm">
                 ${cpu.cores} Cores @ ${cpu.speed} GHz
@@ -340,10 +340,10 @@ function generateHTML() {
           <li class="list-group-item">
             <div class="row">
               <div class="col-sm">
-                Average CPU load: ${cpuLoad.avgload}%
+                CPU load: ${Number((cpuLoad.currentload).toFixed(2))}%
               </div>
               <div class="col-sm">
-                <i class="fas fa-memory"></i> ${Number(((mem.used/mem.total) * 100).toFixed(2))}% used (${Number((mem.used / 1000000).toFixed(2))} / ${Number((mem.total / 1000000).toFixed(2))} MB)
+                <i class="fas fa-memory"></i> ${Number(((mem.active/mem.total) * 100).toFixed(2))}% used (${Number((mem.active / 1000000).toFixed(2))} / ${Number((mem.total / 1000000).toFixed(2))} MB)
               </div>
               <div class="col-sm">
                 <i class="fas fa-hdd"></i> ${Number(((storage.used/storage.size) * 100).toFixed(2))}% used (${Number((storage.used / 1000000000).toFixed(2))} / ${Number((storage.size / 1000000000).toFixed(2))} GB)

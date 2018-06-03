@@ -402,6 +402,7 @@ io.on('connection', function(socket){
   });
   socket.on('probe', function(){
     probeAll();
+    updateAllSysinfo();
   });
 });
 

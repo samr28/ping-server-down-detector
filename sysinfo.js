@@ -34,8 +34,8 @@ function updateData(callback) {
     },
     function (cb) {
       si.cpuTemperature(function (info) {
-        if (data.cpuTemp < 0) {
-          data.cpuTemp = info * 1000;
+        if (parseFloat(info.main) < 1) {
+          data.cpuTemp.main = info.main * 1000;
         } else {
           data.cpuTemp = info;
         }

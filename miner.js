@@ -8,11 +8,13 @@ module.exports = {
       }
       var data = JSON.parse(body);
       var ret = {};
-      ret.currentHashrate = data.currentHashrate/1000000;
-      ret.longHashrate = data.hashrate/1000000;
-      // ret.pendingBalance = data.stats.balance/1000000000;
-      // ret.paid = data.stats.paid/1000000000;
-      ret.lastBeat = parseInt(data.workers.m1.lastBeat) * 1000;
+      if (data) {
+        ret.currentHashrate = data.currentHashrate/1000000;
+        ret.longHashrate = data.hashrate/1000000;
+        // ret.pendingBalance = data.stats.balance/1000000000;
+        // ret.paid = data.stats.paid/1000000000;
+        ret.lastBeat = parseInt(data.workers.m1.lastBeat) * 1000;
+      }
       cb(ret);
     });
   }

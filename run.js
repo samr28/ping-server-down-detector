@@ -122,7 +122,6 @@ function allServersOnline() {
 function updateAllSysinfo(cb) {
   servers.forEach(function (server) {
     if (!server.isOffline) {
-      console.log(`http://${server.ip}:${server.sysinfoPort}/api`);
       request(`http://${server.ip}:${server.sysinfoPort}/api`, function (error, response, body) {
         if (error) {
           console.log(`${server.name} (http://${server.ip}:${server.sysinfoPort}/api) get sysinfo error: ${error}`);

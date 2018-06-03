@@ -4,6 +4,7 @@ var request = require('request');
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var moment = require('moment');
 
 var version = require('./package.json').version;
 var m = require('./miner.js');
@@ -28,6 +29,15 @@ servers[0] = {
   isOffline: false
 };
 servers[1] = {
+  name: 'orangepione-1',
+  isMiner: false,
+  sysinfo: {},
+  sysinfoPort: process.env.ORANGEPIONE_1_SYSINFO_PORT,
+  ip: process.env.ORANGEPIONE_1_IP,
+  port: process.env.ORANGEPIONE_1_PORT,
+  isOffline: false
+};
+servers[2] = {
   name: 'orangepione-2',
   isMiner: false,
   sysinfo: {},
@@ -36,7 +46,7 @@ servers[1] = {
   port: process.env.ORANGEPIONE_2_PORT,
   isOffline: false
 };
-servers[2] = {
+servers[3] = {
   name: 'orangepione-3',
   isMiner: false,
   sysinfo: {},
@@ -325,27 +335,38 @@ function generateHTML() {
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
             <div class="row">
-              <div class="col-sm">
+              <div class="col">
                 ${cpu.manufacturer} ${cpu.brand}
               </div>
-              <div class="col-sm">
+              <div class="col">
                 ${cpu.cores} Cores @ ${cpu.speed} GHz
               </div>
-              <div class="col-sm">
-                <i class="fas fa-thermometer"></i> ${cpu.temp} C
+              <div class="col">
+                <i class="fas fa-thermometer-half"></i> ${cpu.temp} C
               </div>
             </div>
           </li>
           <li class="list-group-item">
             <div class="row">
-              <div class="col-sm">
+              <div class="col">
                 CPU load: ${Number((cpuLoad.currentload).toFixed(2))}%
+                <div class="progress" style="height: 30px;">
+                  <div class="progress-bar" role="progressbar" style="width: ${Number((cpuLoad.currentload).toFixed(2))}%;" aria-valuenow="${Number((cpuLoad.currentload).toFixed(2))}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
               </div>
-              <div class="col-sm">
-                <i class="fas fa-memory"></i> ${Number(((mem.active/mem.total) * 100).toFixed(2))}% used (${Number((mem.active / 1000000).toFixed(2))} / ${Number((mem.total / 1000000).toFixed(2))} MB)
+              <div class="col">
+                <i class="fas fa-memory"></i> (${Number((mem.active / 1000000).toFixed(2))} / ${Number((mem.total / 1000000).toFixed(2))} MB)
+                <br>
+                <div class="progress" style="height: 30px;">
+                  <div class="progress-bar" role="progressbar" style="width: ${Number(((mem.active/mem.total) * 100).toFixed(2))}%;" aria-valuenow="${Number(((mem.active/mem.total) * 100).toFixed(2))}" aria-valuemin="0" aria-valuemax="100">${Number(((mem.active/mem.total) * 100).toFixed(0))}%</div>
+                </div>
               </div>
-              <div class="col-sm">
-                <i class="fas fa-hdd"></i> ${Number(((storage.used/storage.size) * 100).toFixed(2))}% used (${Number((storage.used / 1000000000).toFixed(2))} / ${Number((storage.size / 1000000000).toFixed(2))} GB)
+              <div class="col">
+                <i class="fas fa-hdd"></i> (${Number((storage.used / 1000000000).toFixed(2))} / ${Number((storage.size / 1000000000).toFixed(2))} GB)
+                <br>
+                <div class="progress" style="height: 30px;">
+                  <div class="progress-bar" role="progressbar" style="width: ${Number(((storage.used/storage.size) * 100).toFixed(2))}%;" aria-valuenow="${Number(((storage.used/storage.size) * 100).toFixed(2))}" aria-valuemin="0" aria-valuemax="100">${Number(((storage.used/storage.size) * 100).toFixed(0))}%</div>
+                </div>
               </div>
             </div>
           </li>
@@ -358,9 +379,9 @@ function generateHTML() {
       <div class="card">
         <h5 class="card-header"><span class="badge badge-pill badge-${server.isOffline ? 'danger' : 'success'}">${server.isOffline ? 'Offline' : 'Online'}</span> ${server.name}</h5>
         <ul class="list-group list-group-flush">
-          <li class="list-group-item" id="mydiv">Current hashrate (30m): ${server.stats.currentHashrate} MH</li>
-          <li class="list-group-item">Long hashrate (3h): ${server.stats.longHashrate} MH</li>
-          <li class="list-group-item">Last beat: ${new Date(server.stats.lastBeat)}</li>
+          <li class="list-group-item" id="mydiv">Current hashrate (30m): ${Number((server.stats.currentHashrate).toFixed(2))} MH</li>
+          <li class="list-group-item">Long hashrate (3h): ${Number((server.stats.longHashrate).toFixed(2))} MH</li>
+          <li class="list-group-item">Last beat: ${moment(new Date(server.stats.lastBeat)).fromNow()} (${new Date(server.stats.lastBeat)})</li>
         </ul>
       </div>`;
   });

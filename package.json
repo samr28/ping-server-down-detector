@@ -1,6 +1,6 @@
 {
   "name": "ping-server-down-detector",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Ping local servers and send an email if any are down.",
   "main": "run.js",
   "dependencies": {

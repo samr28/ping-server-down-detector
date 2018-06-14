@@ -28,9 +28,6 @@
       $('#refresh').click(function() {
         socket.emit('refresh');
       });
-      $('#probe').click(function() {
-        socket.emit('probe');
-      });
     });
   </script>
   <body>
@@ -41,7 +38,6 @@
         </div>
         <div class="col-sm" style="text-align: right">
           <button id="refresh" type="button" class="btn btn-primary">Refresh <i class="fas fa-sync"></i></button>
-          <button id="probe" type="button" class="btn btn-primary">Probe <i class="fas fa-server"></i></i></button>
         </div>
       </div>
     </div>

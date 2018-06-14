@@ -15,6 +15,9 @@ You probably have different servers than I do. If you would like to remove the o
 ## Creating a run script
 Run scripts make things much easier. You can place all of your environment variables (server IPs, ports, email addresses, etc.) in one place. Simply copy the template below and modify as needed. You will also need to install forever.js if you want your script to start back up if something causes it to crash. To install, type `npm install forever -g`. If you would like to use the script without forever.js, simply change the last line to `node run.js`
 
+## Monitoring the status of other servers
+On the other servers, simply clone down the repo and run `servesysinfo` to host a page with the server stats
+
 ```
 #!/bin/bash
 
@@ -58,10 +61,6 @@ forever start -l /home/USER/logs/ping-server-down-detector.log -a run.js
 ## Creating a run script for sysinfo
 ```
 #!/bin/bash
-
-# Update data every UPDATE_TIME mins
-# Default: 60
-export UPDATE_TIME=60
 
 # Uncomment to turn on debug mode
 # export DEBUG=1

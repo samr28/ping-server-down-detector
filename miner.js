@@ -13,7 +13,9 @@ module.exports = {
         ret.longHashrate = data.hashrate/1000000;
         // ret.pendingBalance = data.stats.balance/1000000000;
         // ret.paid = data.stats.paid/1000000000;
-        ret.lastBeat = parseInt(data.workers.m1.lastBeat) * 1000;
+        if (data.workers && data.workers.m1 && data.workers.m1.lastBeat) {
+          ret.lastBeat = parseInt(data.workers.m1.lastBeat) * 1000;
+        }
       }
       cb(ret);
     });

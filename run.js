@@ -452,7 +452,7 @@ io.on('connection', function(socket){
     probeAll(updateAllSysinfo(refreshAll));
   }, process.env.WEB_UPDATE_TIME);
   refreshAll();
-  io.sockets.emit('update footer', `<a href="https://github.com/samr28/ping-server-down-detector" target="_blank">ping-server-down-detector</a> v${version}`, `Refreshing every ${process.env.PROBE_TIME} ms`);
+  io.sockets.emit('update footer', `<a href="https://github.com/samr28/ping-server-down-detector" target="_blank">ping-server-down-detector</a> v${version}`, `Refreshing every ${process.env.WEB_UPDATE_TIME} ms`);
   socket.on('refresh', function(){
     probeAll(updateAllSysinfo(refreshAll));
   });

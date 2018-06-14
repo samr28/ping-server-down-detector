@@ -59,16 +59,45 @@ function updateData(callback) {
         data.storage = info;
         cb();
       });
-    },
+    }
+  ], function (err, results) {
+    if (callback) {
+      callback();
+    }
+  });
+}
+
+/**
+ * Update dynamic data
+ * @return {object} Data
+ */
+function updateDynamicData(callback) {
+  async.parallel([
     function (cb) {
-      si.networkStats(function (info) {
-        data.net = info;
+      si.cpuTemperature(function (info) {
+        if (parseFloat(info.main) < 1) {
+          data.cpuTemp.main = info.main * 1000;
+        } else {
+          data.cpuTemp = info;
+        }
         cb();
       });
     },
     function (cb) {
-      si.inetLatency('8.8.8.8', function (info) {
-        data.latency = info;
+      si.currentLoad(function (info) {
+        data.cpuLoad = info;
+        cb();
+      });
+    },
+    function (cb) {
+      si.mem(function (info) {
+        data.mem = info;
+        cb();
+      });
+    },
+    function (cb) {
+      si.fsSize(function (info) {
+        data.storage = info;
         cb();
       });
     }
@@ -79,8 +108,10 @@ function updateData(callback) {
   });
 }
 
+updateData();
+
 app.get('/api', function(req, res){
-  updateData(function () {
+  updateDynamicData(function () {
     res.write(JSON.stringify(data));
     res.end();
   });

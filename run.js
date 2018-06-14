@@ -16,6 +16,13 @@ if (process.env.DEBUG == 1) {
   debug = false;
 }
 
+var SEND_EMAIL;
+if (process.env.SEND_EMAIL == 1) {
+  SEND_EMAIL = true;
+} else {
+  SEND_EMAIL = false;
+}
+
 var servers = [];
 var miners = [];
 
@@ -149,31 +156,33 @@ function updateAllSysinfo(cb) {
 
 /**
  * Ping all of the servers
+ * @param {function}  cb  Callback
  */
-function probeAll() {
+function probeAll(cb) {
   servers.forEach(function (server) {
-    probe(server);
+    probe(server, cb);
   });
   miners.forEach(function (server) {
-    probeMiner(server);
-    probeMinerHR(server);
+    probeMiner(server, cb);
+    probeMinerHR(server, cb);
   })
 }
 
 /**
  * Ping a single server and call sendEmail if offline
  * @param  {Object} server Server to ping
+ * @param  {Function} cb  Callback
  */
-function probe(server) {
+function probe(server, cb) {
   tcpp.probe(server.ip, server.port, function(err, available) {
     if (debug) {
       console.log(`${server.name} (${server.ip}:${server.port}): ${available ? 'online' : 'offline'}`);
     }
     if (!available && !server.isOffline) {
-      sendEmailOffline(server);
+      sendEmailOffline(server, cb);
     }
     if (available && server.isOffline) {
-      sendEmailOnline(server);
+      sendEmailOnline(server, cb);
     }
   });
 }
@@ -181,8 +190,9 @@ function probe(server) {
 /**
  * Ping a single miner and call sendEmail if offline
  * @param  {Object} server Server to ping
+ * @param  {Function} cb  Callback
  */
-function probeMiner(server) {
+function probeMiner(server, cb) {
   request(server.api, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       var data = JSON.parse(body);
@@ -190,10 +200,10 @@ function probeMiner(server) {
         console.log(`${server.name} (${server.name}: [Online:${data.workersOnline}] [Offline:${data.workersOffline}]`);
       }
      if (data.workersOffline > 0 && !server.isOffline) {
-       sendEmailOffline(server);
+       sendEmailOffline(server, cb);
      }
      if (data.workersOffline == 0 && server.isOffline) {
-       sendEmailOnline(server);
+       sendEmailOnline(server, cb);
      }
     }
   })
@@ -226,8 +236,10 @@ function probeMinerHR(server) {
 /**
  * Send an email if a miner is having problems
  * @param  {Object} server Server having problems
+ * @param {function}  cb  Callback
  */
-function sendEmailMiner(server) {
+function sendEmailMiner(server, cb) {
+  server.sentHRMail = true;
   if (debug) {
     console.log(`[${new Date()}] Sending miner email.`);
   }
@@ -239,27 +251,34 @@ function sendEmailMiner(server) {
     \n\nLong (3h) hashrate is ${server.stats.longHashrate} MH. Should be > ${process.env.LOW_HR}.
     \nCurrent (30m) hashrate is ${server.stats.currentHashrate} MH.
     \nLast beat was ${new Date(server.stats.lastBeat)}.
-    \n\nChecking every ${process.env.PROBE_TIME} mins
+    \n\nChecking every ${process.env.PROBE_TIME} ms
     \n\nping-server-down-detector v${version} - https://github.com/samr28/ping-server-down-detector`
   };
-
-  transporter.sendMail(mailOptions, function(error, info){
-    if (error) {
-      console.log(`[${new Date()}] Error sending email: ${error}`);
-    } else {
-      if (debug) {
-        console.log(`[${new Date()}] Email sent: ${info.response}`);
+  if (SEND_EMAIL) {
+    transporter.sendMail(mailOptions, function(error, info){
+      if (error) {
+        console.log(`[${new Date()}] Error sending email: ${error}`);
+        server.sentHRMail = false;
+      } else {
+        if (debug) {
+          console.log(`[${new Date()}] Email sent: ${info.response}`);
+        }
       }
-      server.sentHRMail = true;
-    }
-  });
+      if (cb) {
+        cb();
+      }
+    });
+  } else if (cb) {
+    cb();
+  }
 }
 
 /**
  * Send an email that a server has come back online
  * @param  {Object} server Server that is now online
+ * @param {function}  cb  Callback
  */
-function sendEmailOnline(server) {
+function sendEmailOnline(server, cb) {
   if (debug) {
     console.log(`[${new Date()}] Sending online email`);
   }
@@ -268,27 +287,34 @@ function sendEmailOnline(server) {
     to: process.env.EMAIL_RECIPIENT,
     subject: `${server.name} is back online!`,
     text: `${server.name} came back around ${new Date()}
-    \n\nChecking every ${process.env.PROBE_TIME} mins
+    \n\nChecking every ${process.env.PROBE_TIME} ms
     \n\nping-server-down-detector v${version} - https://github.com/samr28/ping-server-down-detector`
   };
-
-  transporter.sendMail(mailOptions, function(error, info){
-    if (error) {
-      console.log(`[${new Date()}] Error sending email: ${error}`);
-    } else {
-      if (debug) {
-        console.log(`[${new Date()}] Email sent: ${info.response}`);
+  if (SEND_EMAIL) {
+    transporter.sendMail(mailOptions, function(error, info){
+      if (error) {
+        console.log(`[${new Date()}] Error sending email: ${error}`);
+      } else {
+        if (debug) {
+          console.log(`[${new Date()}] Email sent: ${info.response}`);
+        }
+        server.isOffline = false;
       }
-      server.isOffline = false;
-    }
-  });
+      if (cb) {
+        cb();
+      }
+    });
+  } else if (cb) {
+    cb();
+  }
 }
 
 /**
  * Send an email that a server is offline
  * @param  {Object} server Server that has gone offline
+ * @param {function}  cb  Callback
  */
-function sendEmailOffline(server) {
+function sendEmailOffline(server, cb) {
   if (debug) {
     console.log(`[${new Date()}] Sending offline email`);
   }
@@ -297,20 +323,26 @@ function sendEmailOffline(server) {
     to: process.env.EMAIL_RECIPIENT,
     subject: `${server.name} is offline!`,
     text: `${server.name} went offline around ${new Date()}
-    \n\nChecking every ${process.env.PROBE_TIME} mins
+    \n\nChecking every ${process.env.PROBE_TIME} ms
     \n\nping-server-down-detector v${version} - https://github.com/samr28/ping-server-down-detector`
   };
-
-  transporter.sendMail(mailOptions, function(error, info){
-    if (error) {
-      console.log(`[${new Date()}] Error sending email: ${error}`);
-    } else {
-      if (debug) {
-        console.log(`[${new Date()}] Email sent: ${info.response}`);
+  if (SEND_EMAIL) {
+    transporter.sendMail(mailOptions, function(error, info){
+      if (error) {
+        console.log(`[${new Date()}] Error sending email: ${error}`);
+      } else {
+        if (debug) {
+          console.log(`[${new Date()}] Email sent: ${info.response}`);
+        }
+        server.isOffline = true;
       }
-      server.isOffline = true;
-    }
-  });
+      if (cb) {
+        cb();
+      }
+    });
+  } else if (cb) {
+    cb();
+  }
 }
 
 /**
@@ -400,8 +432,7 @@ function refreshAll() {
 console.log(`[${new Date()}] Starting v${version}`);
 
 // Initial probe
-probeAll();
-updateAllSysinfo();
+probeAll(updateAllSysinfo);
 
 // Serve index
 app.get('/', function(req, res){
@@ -413,16 +444,20 @@ app.get('/api', function(req, res){
   res.end();
 });
 
+let intervalObj;
+
 // Update inner html and refresh when buttons are clicked
 io.on('connection', function(socket){
+  intervalObj = setInterval(() => {
+    probeAll(updateAllSysinfo(refreshAll));
+  }, process.env.WEB_UPDATE_TIME);
   refreshAll();
-  io.sockets.emit('update footer', `<a href="https://github.com/samr28/ping-server-down-detector" target="_blank">ping-server-down-detector</a> v${version}`, `Refreshing every ${process.env.PROBE_TIME} mins`);
+  io.sockets.emit('update footer', `<a href="https://github.com/samr28/ping-server-down-detector" target="_blank">ping-server-down-detector</a> v${version}`, `Refreshing every ${process.env.PROBE_TIME} ms`);
   socket.on('refresh', function(){
-    refreshAll();
+    probeAll(updateAllSysinfo(refreshAll));
   });
-  socket.on('probe', function(){
-    probeAll();
-    updateAllSysinfo();
+  socket.on('disconnect', function() {
+    clearInterval(intervalObj);
   });
 });
 
@@ -431,10 +466,9 @@ http.listen(process.env.WEB_PORT, function(){
   console.log(`listening on *:${process.env.WEB_PORT}`);
 });
 
-var minutes = process.env.PROBE_TIME, the_interval = minutes * 60 * 1000;
 setInterval(function() {
   if (debug) {
     console.log(`\n[${new Date()}] Checking`);
   }
-  probeAll();
-}, the_interval);
+  probeAll(updateAllSysinfo);
+}, process.env.PROBE_TIME);

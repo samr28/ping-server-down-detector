@@ -90,11 +90,3 @@ app.get('/api', function(req, res){
 http.listen(process.env.WEB_PORT, function(){
   console.log(`listening on *:${process.env.WEB_PORT}`);
 });
-
-var minutes = process.env.UPDATE_TIME, the_interval = minutes * 60 * 1000;
-setInterval(function() {
-  if (debug) {
-    console.log(`\n[${new Date()}] Update info`);
-  }
-  updateData();
-}, the_interval);

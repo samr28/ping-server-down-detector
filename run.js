@@ -107,6 +107,7 @@ function getAllData() {
   miners.forEach(function (server) {
     allData.miners.push({
       name: server.name,
+      status: server.status,
       stats: server.stats,
       isOffline: server.isOffline
     });
@@ -229,7 +230,7 @@ function probeMinerHR(server) {
       }
     });
   } else {
-    console.log(`${server.name} is not a miner!`);
+    console.log(new Error(`${server.name} is not a miner!`));
   }
 }
 
@@ -356,7 +357,10 @@ function generateHTML() {
   data.servers.forEach(function (server) {
     html += `
       <div class="card">
-        <h5 class="card-header"><span class="badge badge-pill badge-${server.isOffline ? 'danger' : 'success'}">${server.isOffline ? 'Offline' : 'Online'}</span> ${server.name}</h5>`;
+        <div class="card-header ${server.isOffline ? 'danger' : 'success'}-color white-text">
+
+          ${server.name}
+        </div>`;
       if (Object.keys(server.sysinfo).length !== 0) {
         var cpu = server.sysinfo.cpu;
         cpu.temp = server.sysinfo.cpuTemp.main;
@@ -364,52 +368,56 @@ function generateHTML() {
         var mem = server.sysinfo.mem;
         var storage = server.sysinfo.storage[0];
         html += `
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            <div class="row">
-              <div class="col">
-                ${cpu.manufacturer} ${cpu.brand}
-              </div>
-              <div class="col">
-                ${cpu.cores} Cores @ ${cpu.speed} GHz
-              </div>
-              <div class="col">
-                <i class="fas fa-thermometer-half"></i> ${cpu.temp} C
-              </div>
-            </div>
-          </li>
-          <li class="list-group-item">
-            <div class="row">
-              <div class="col">
-                CPU load: ${Number((cpuLoad.currentload).toFixed(2))}%
-                <div class="progress" style="height: 30px;">
-                  <div class="progress-bar" role="progressbar" style="width: ${Number((cpuLoad.currentload).toFixed(2))}%;" aria-valuenow="${Number((cpuLoad.currentload).toFixed(2))}" aria-valuemin="0" aria-valuemax="100"></div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <div class="row">
+                <div class="col">
+                  ${cpu.manufacturer} ${cpu.brand}
+                </div>
+                <div class="col">
+                  ${cpu.cores} Cores @ ${cpu.speed} GHz
+                </div>
+                <div class="col">
+                  <i class="fas fa-thermometer-half"></i> ${cpu.temp} C
                 </div>
               </div>
-              <div class="col">
-                <i class="fas fa-memory"></i> (${Number((mem.active / 1000000).toFixed(2))} / ${Number((mem.total / 1000000).toFixed(2))} MB)
-                <br>
-                <div class="progress" style="height: 30px;">
-                  <div class="progress-bar" role="progressbar" style="width: ${Number(((mem.active/mem.total) * 100).toFixed(2))}%;" aria-valuenow="${Number(((mem.active/mem.total) * 100).toFixed(2))}" aria-valuemin="0" aria-valuemax="100">${Number(((mem.active/mem.total) * 100).toFixed(0))}%</div>
+            </li>
+            <li class="list-group-item">
+              <div class="row">
+                <div class="col">
+                  CPU load: ${Number((cpuLoad.currentload).toFixed(2))}%
+                  <div class="progress" style="height: 30px;">
+                    <div class="progress-bar" role="progressbar" style="width: ${Number((cpuLoad.currentload).toFixed(2))}%;" aria-valuenow="${Number((cpuLoad.currentload).toFixed(2))}" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+                <div class="col">
+                  <i class="fas fa-memory"></i> (${Number((mem.active / 1000000).toFixed(2))} / ${Number((mem.total / 1000000).toFixed(2))} MB)
+                  <br>
+                  <div class="progress" style="height: 30px;">
+                    <div class="progress-bar" role="progressbar" style="width: ${Number(((mem.active/mem.total) * 100).toFixed(2))}%;" aria-valuenow="${Number(((mem.active/mem.total) * 100).toFixed(2))}" aria-valuemin="0" aria-valuemax="100">${Number(((mem.active/mem.total) * 100).toFixed(0))}%</div>
+                  </div>
+                </div>
+                <div class="col">
+                  <i class="fas fa-hdd"></i> (${Number((storage.used / 1000000000).toFixed(2))} / ${Number((storage.size / 1000000000).toFixed(2))} GB)
+                  <br>
+                  <div class="progress" style="height: 30px;">
+                    <div class="progress-bar" role="progressbar" style="width: ${Number(((storage.used/storage.size) * 100).toFixed(2))}%;" aria-valuenow="${Number(((storage.used/storage.size) * 100).toFixed(2))}" aria-valuemin="0" aria-valuemax="100">${Number(((storage.used/storage.size) * 100).toFixed(0))}%</div>
+                  </div>
                 </div>
               </div>
-              <div class="col">
-                <i class="fas fa-hdd"></i> (${Number((storage.used / 1000000000).toFixed(2))} / ${Number((storage.size / 1000000000).toFixed(2))} GB)
-                <br>
-                <div class="progress" style="height: 30px;">
-                  <div class="progress-bar" role="progressbar" style="width: ${Number(((storage.used/storage.size) * 100).toFixed(2))}%;" aria-valuenow="${Number(((storage.used/storage.size) * 100).toFixed(2))}" aria-valuemin="0" aria-valuemax="100">${Number(((storage.used/storage.size) * 100).toFixed(0))}%</div>
-                </div>
-              </div>
-            </div>
-          </li>
-        </ul>`;
+            </li>
+          </ul>
+        </div>`;
       }
-      html += `</div>`;
+      html += `</div><br>`;
   });
   data.miners.forEach(function (server) {
     html += `
       <div class="card">
-        <h5 class="card-header"><span class="badge badge-pill badge-${server.isOffline ? 'danger' : 'success'}">${server.isOffline ? 'Offline' : 'Online'}</span> ${server.name}</h5>
+        <div class="card-header ${server.isOffline ? 'danger' : (server.status.lowHR || server.status.badBeat ? 'warning' : 'success')}-color white-text">
+          ${server.name}
+        </div>
         <ul class="list-group list-group-flush">
           <li class="list-group-item" id="mydiv">Current hashrate (30m): ${Number((server.stats.currentHashrate).toFixed(2))} MH</li>
           <li class="list-group-item">Long hashrate (3h): ${Number((server.stats.longHashrate).toFixed(2))} MH</li>

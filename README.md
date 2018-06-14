@@ -28,6 +28,9 @@ export PROBE_TIME=5
 # Uncomment to turn on debug mode
 #export DEBUG=1
 
+# Comment to turn of emails
+export SEND_EMAIL=1
+
 export EMAIL_CLIENT=gmail
 export EMAIL_ADDRESS=
 export EMAIL_PASSWORD=

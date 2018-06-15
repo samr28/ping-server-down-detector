@@ -363,13 +363,13 @@ function generateHTML() {
   var html = ``;
   data.servers.forEach(function (server) {
     html += `
-      <div class="card waves-effect">
+      <div class="card waves-effect toggleServerInfo" data-server="${server.name}">
         <div class="card-header ${server.isOffline ? 'danger' : 'success'}-color white-text">
           <div class="row">
-            <div class="col-sm">
+            <div class="col">
               ${server.name}
             </div>
-            <div class="toggleServerInfo toggle${server.name} col-sm" style="text-align: right" data-server="${server.name}">
+            <div class="col" style="text-align: right">
               <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
             </div>
           </div>
@@ -427,13 +427,13 @@ function generateHTML() {
   });
   data.miners.forEach(function (server) {
     html += `
-      <div class="card waves-effect">
+      <div class="card waves-effect toggleServerInfo" data-server="${server.name}">
         <div class="card-header ${server.isOffline ? 'danger' : (server.status.lowHR || server.status.badBeat ? 'warning' : 'success')}-color white-text">
           <div class="row">
             <div class="col-sm">
               ${server.name}
             </div>
-            <div class="toggleServerInfo toggle${server.name} col-sm" style="text-align: right" data-server="${server.name}">
+            <div class="col-sm" style="text-align: right">
               <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
             </div>
           </div>

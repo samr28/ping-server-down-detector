@@ -10,6 +10,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.4/css/mdb.min.css" rel="stylesheet">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link id="shortcuticon" rel="shortcut icon" href="https://i.imgur.com/EWO21Xi.png" type="image/x-icon">
+    <link id="favicon" rel="icon" href="https://i.imgur.com/EWO21Xi.png" type="image/x-icon">
   </head>
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
@@ -22,6 +24,11 @@
       socket.on('update title', function (isOnline) {
         document.title = isOnline ? 'Online' : 'Offline';
       });
+      socket.on('update favicon', function (isOnline) {
+        let image = isOnline ? 'https://i.imgur.com/EWO21Xi.png' : 'https://i.imgur.com/HrdJxF6.png';
+        $('#shortcuticon').attr("href",`${image}`);
+        $('#favicon').attr("href",`${image}`);
+      });
       socket.on('update footer', function (leftText, rightText) {
         $('#footer').html(`
           <p style="text-align:left; margin-bottom: 0">
@@ -31,6 +38,9 @@
       });
       $('#refresh').click(function() {
         socket.emit('refresh');
+      });
+      $('#toggleAll').click(function() {
+        socket.emit('toggleAll');
       });
       $(document).on('click', '.toggleServerInfo', function() {
         socket.emit('toggle', $(this).attr('data-server'));
@@ -46,14 +56,16 @@
   <body>
     <div class="container" style="padding-top: 10px">
       <div class="row">
-        <div class="col-8">
+        <div class="col">
           <h1>Server Status</h1>
         </div>
-        <div class="col-4" style="text-align: right">
+        <div class="col" style="text-align: right">
+          <button id="toggleAll" type="button" class="btn btn-outline-primary waves-effect"><i class="fas fa-bars"></i></button>
           <button id="refresh" type="button" class="btn btn-outline-primary waves-effect"><i class="fas fa-sync"></i></button>
         </div>
       </div>
     </div>
+    <br>
     <div class="container">
       <div id="displayServers"></div>
     </div>

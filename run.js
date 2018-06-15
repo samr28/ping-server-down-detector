@@ -7,6 +7,8 @@ var io = require('socket.io')(http);
 var moment = require('moment');
 
 var version = require('./package.json').version;
+var name = require('./package.json').name;
+var homepage = require('./package.json').homepage;
 var m = require('./miner.js');
 
 var debug;
@@ -126,17 +128,21 @@ function getAllData() {
  * Check if all servers are online
  * @return {Boolean} True when all servers are online
  */
+let allOnline = null;
 function allServersOnline() {
   servers.forEach(function (server) {
     if (server.isOffline) {
-      return false
+      allOnline = false;
+      return false;
     }
   });
   miners.forEach(function (server) {
     if (server.isOffline) {
-      return false
+      allOnline = false;
+      return false;
     }
   });
+  allOnline = true;
   return true;
 }
 
@@ -260,7 +266,7 @@ function sendEmailMiner(server, cb) {
     \nCurrent (30m) hashrate is ${server.stats.currentHashrate} MH.
     \nLast beat was ${new Date(server.stats.lastBeat)}.
     \n\nChecking every ${process.env.PROBE_TIME} ms
-    \n\nping-server-down-detector v${version} - https://github.com/samr28/ping-server-down-detector`
+    \n\nping-server-down-detector v${version} - ${homepage}`
   };
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
@@ -296,7 +302,7 @@ function sendEmailOnline(server, cb) {
     subject: `${server.name} is back online!`,
     text: `${server.name} came back around ${new Date()}
     \n\nChecking every ${process.env.PROBE_TIME} ms
-    \n\nping-server-down-detector v${version} - https://github.com/samr28/ping-server-down-detector`
+    \n\nping-server-down-detector v${version} - ${homepage}`
   };
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
@@ -332,7 +338,7 @@ function sendEmailOffline(server, cb) {
     subject: `${server.name} is offline!`,
     text: `${server.name} went offline around ${new Date()}
     \n\nChecking every ${process.env.PROBE_TIME} ms
-    \n\nping-server-down-detector v${version} - https://github.com/samr28/ping-server-down-detector`
+    \n\nping-server-down-detector v${version} - ${homepage}`
   };
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
@@ -455,7 +461,11 @@ function generateHTML() {
  */
 function refreshAll() {
   io.sockets.emit('update server', generateHTML());
-  io.sockets.emit('update title', allServersOnline());
+  // Check if all servers online has changed since last check
+  if (allServersOnline() != allOnline) {
+    io.sockets.emit('update title', allServersOnline());
+    io.sockets.emit('update favicon', allServersOnline());
+  }
 }
 
 /**
@@ -485,16 +495,29 @@ let intervalObj;
 
 // Update inner html and refresh when buttons are clicked
 io.on('connection', function(socket){
+  let globalToggle = true;
   intervalObj = setInterval(() => {
     probeAll(updateAllSysinfo(refreshAll));
   }, process.env.WEB_UPDATE_TIME);
   refreshAll();
-  io.sockets.emit('update footer', `<a href="https://github.com/samr28/ping-server-down-detector" target="_blank">ping-server-down-detector</a> v${version}`, `Refreshing every ${process.env.WEB_UPDATE_TIME} ms`);
+  io.sockets.emit('update footer', `<a href="${homepage}" target="_blank">${name}</a> v${version}`, `Refreshing every ${process.env.WEB_UPDATE_TIME} ms`);
+  io.sockets.emit('update favicon', allServersOnline());
+  io.sockets.emit('update title', allServersOnline());
   socket.on('refresh', function(){
     probeAll(updateAllSysinfo(refreshAll));
   });
   socket.on('disconnect', function() {
     clearInterval(intervalObj);
+  });
+  socket.on('toggleAll', function(){
+    servers.forEach(function (server) {
+      server.dropdown = globalToggle;
+    });
+    miners.forEach(function (server) {
+      server.dropdown = globalToggle;
+    });
+    globalToggle = !globalToggle;
+    refreshServers();
   });
   socket.on('toggle', function(s) {
     servers.forEach(function (server) {

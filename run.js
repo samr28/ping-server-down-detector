@@ -33,7 +33,8 @@ servers[0] = {
   sysinfoPort: process.env.SAM_SERVER_2_SYSINFO_PORT,
   ip: process.env.SAM_SERVER_2_IP,
   port: process.env.SAM_SERVER_2_PORT,
-  isOffline: false
+  isOffline: false,
+  dropdown: false
 };
 servers[1] = {
   name: 'orangepione-1',
@@ -42,7 +43,8 @@ servers[1] = {
   sysinfoPort: process.env.ORANGEPIONE_1_SYSINFO_PORT,
   ip: process.env.ORANGEPIONE_1_IP,
   port: process.env.ORANGEPIONE_1_PORT,
-  isOffline: false
+  isOffline: false,
+  dropdown: false
 };
 servers[2] = {
   name: 'orangepione-2',
@@ -51,7 +53,8 @@ servers[2] = {
   sysinfoPort: process.env.ORANGEPIONE_2_SYSINFO_PORT,
   ip: process.env.ORANGEPIONE_2_IP,
   port: process.env.ORANGEPIONE_2_PORT,
-  isOffline: false
+  isOffline: false,
+  dropdown: false
 };
 servers[3] = {
   name: 'orangepione-3',
@@ -60,7 +63,8 @@ servers[3] = {
   sysinfoPort: process.env.ORANGEPIONE_3_SYSINFO_PORT,
   ip: process.env.ORANGEPIONE_3_IP,
   port: process.env.ORANGEPIONE_3_PORT,
-  isOffline: false
+  isOffline: false,
+  dropdown: false
 };
 
 miners[0] = {
@@ -77,7 +81,8 @@ miners[0] = {
   },
   api: process.env.MINER1_API,
   sentHRMail: false,
-  isOffline: false
+  isOffline: false,
+  dropdown: false
 };
 
 var transporter = nodemailer.createTransport({
@@ -101,7 +106,8 @@ function getAllData() {
     allData.servers.push({
       name: server.name,
       isOffline: server.isOffline,
-      sysinfo: server.sysinfo
+      sysinfo: server.sysinfo,
+      dropdown: server.dropdown
     });
   });
   miners.forEach(function (server) {
@@ -109,7 +115,8 @@ function getAllData() {
       name: server.name,
       status: server.status,
       stats: server.stats,
-      isOffline: server.isOffline
+      isOffline: server.isOffline,
+      dropdown: server.dropdown
     });
   });
   return allData;
@@ -356,10 +363,16 @@ function generateHTML() {
   var html = ``;
   data.servers.forEach(function (server) {
     html += `
-      <div class="card">
+      <div class="card waves-effect">
         <div class="card-header ${server.isOffline ? 'danger' : 'success'}-color white-text">
-
-          ${server.name}
+          <div class="row">
+            <div class="col-sm">
+              ${server.name}
+            </div>
+            <div class="toggleServerInfo toggle${server.name} col-sm" style="text-align: right" data-server="${server.name}">
+              <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
+            </div>
+          </div>
         </div>`;
       if (Object.keys(server.sysinfo).length !== 0) {
         var cpu = server.sysinfo.cpu;
@@ -368,7 +381,7 @@ function generateHTML() {
         var mem = server.sysinfo.mem;
         var storage = server.sysinfo.storage[0];
         html += `
-        <div class="card-body">
+        <div class="collapse card-body ${server.dropdown ? 'show' : ''}" id="collapse${server.name}">
           <ul class="list-group list-group-flush">
             <li class="list-group-item">
               <div class="row">
@@ -414,15 +427,24 @@ function generateHTML() {
   });
   data.miners.forEach(function (server) {
     html += `
-      <div class="card">
+      <div class="card waves-effect">
         <div class="card-header ${server.isOffline ? 'danger' : (server.status.lowHR || server.status.badBeat ? 'warning' : 'success')}-color white-text">
-          ${server.name}
+          <div class="row">
+            <div class="col-sm">
+              ${server.name}
+            </div>
+            <div class="toggleServerInfo toggle${server.name} col-sm" style="text-align: right" data-server="${server.name}">
+              <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
+            </div>
+          </div>
         </div>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item" id="mydiv">Current hashrate (30m): ${Number((server.stats.currentHashrate).toFixed(2))} MH</li>
-          <li class="list-group-item">Long hashrate (3h): ${Number((server.stats.longHashrate).toFixed(2))} MH</li>
-          <li class="list-group-item">Last beat: ${moment(new Date(server.stats.lastBeat)).fromNow()} (${new Date(server.stats.lastBeat)})</li>
-        </ul>
+        <div class="collapse card-body ${server.dropdown ? 'show' : ''}" id="collapse${server.name}">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item" id="mydiv">Current hashrate (30m): ${Number((server.stats.currentHashrate).toFixed(2))} MH</li>
+            <li class="list-group-item">Long hashrate (3h): ${Number((server.stats.longHashrate).toFixed(2))} MH</li>
+            <li class="list-group-item">Last beat: ${moment(new Date(server.stats.lastBeat)).fromNow()} (${new Date(server.stats.lastBeat)})</li>
+          </ul>
+        </div>
       </div>`;
   });
   return html;
@@ -434,6 +456,13 @@ function generateHTML() {
 function refreshAll() {
   io.sockets.emit('update server', generateHTML());
   io.sockets.emit('update title', allServersOnline());
+}
+
+/**
+ * Generate new HTML for servers
+ */
+function refreshServers() {
+  io.sockets.emit('update server', generateHTML());
 }
 
 
@@ -466,6 +495,19 @@ io.on('connection', function(socket){
   });
   socket.on('disconnect', function() {
     clearInterval(intervalObj);
+  });
+  socket.on('toggle', function(s) {
+    servers.forEach(function (server) {
+      if (server.name === s) {
+        server.dropdown = !server.dropdown;
+      }
+    });
+    miners.forEach(function (server) {
+      if (server.name === s) {
+        server.dropdown = !server.dropdown;
+      }
+    });
+    refreshServers();
   });
 });
 

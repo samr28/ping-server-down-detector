@@ -14,7 +14,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script>
-    $(function () {
+    $(document).ready(function() {
       var socket = io();
       socket.on('update server', function (displayServers) {
         $('#displayServers').html($(displayServers));
@@ -32,8 +32,14 @@
       $('#refresh').click(function() {
         socket.emit('refresh');
       });
+      $(document).on('click', '.toggleServerInfo', function() {
+        socket.emit('toggle', $(this).attr('data-server'));
+      });
     });
   </script>
+  <style>
+    .grabbing {cursor: -webkit-grabbing; cursor: grabbing;}
+  </style>
   <body>
     <div class="container" style="padding-top: 10px">
       <div class="row">
@@ -59,6 +65,12 @@
     </div>
     <br>
   </body>
+  <!-- JQuery -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <!-- Bootstrap tooltips -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.13.0/umd/popper.min.js"></script>
+  <!-- Bootstrap core JavaScript -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/js/bootstrap.min.js"></script>
   <!-- MDB core JavaScript -->
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.4/js/mdb.min.js"></script>
 </html>

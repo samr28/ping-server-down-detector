@@ -10,6 +10,7 @@ var version = require('./package.json').version;
 var name = require('./package.json').name;
 var homepage = require('./package.json').homepage;
 var m = require('./miner.js');
+var l = require('./log.js');
 
 var debug;
 if (process.env.DEBUG == 1) {
@@ -189,9 +190,7 @@ function probeAll(cb) {
  */
 function probe(server, cb) {
   tcpp.probe(server.ip, server.port, function(err, available) {
-    if (debug) {
-      console.log(`${server.name} (${server.ip}:${server.port}): ${available ? 'online' : 'offline'}`);
-    }
+    l.log(`${server.name} (${server.ip}:${server.port}): ${available ? 'online' : 'offline'}`);
     if (!available && !server.isOffline) {
       sendEmailOffline(server, cb);
     }
@@ -210,9 +209,7 @@ function probeMiner(server, cb) {
   request(server.api, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       var data = JSON.parse(body);
-      if (debug) {
-        console.log(`${server.name} (${server.name}: [Online:${data.workersOnline}] [Offline:${data.workersOffline}]`);
-      }
+      l.log(`${server.name} (${server.name}: [Online:${data.workersOnline}] [Offline:${data.workersOffline}]`);
      if (data.workersOffline > 0 && !server.isOffline) {
        sendEmailOffline(server, cb);
      }
@@ -254,9 +251,7 @@ function probeMinerHR(server) {
  */
 function sendEmailMiner(server, cb) {
   server.sentHRMail = true;
-  if (debug) {
-    console.log(`[${new Date()}] Sending miner email.`);
-  }
+  l.log(`[${new Date()}] Sending miner email.`);
   var mailOptions = {
     from: process.env.EMAIL_CLIENT,
     to: process.env.EMAIL_RECIPIENT,
@@ -271,12 +266,10 @@ function sendEmailMiner(server, cb) {
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
-        console.log(`[${new Date()}] Error sending email: ${error}`);
+        console.log(`Error sending email: ${error}`);
         server.sentHRMail = false;
       } else {
-        if (debug) {
-          console.log(`[${new Date()}] Email sent: ${info.response}`);
-        }
+        l.log(`[${new Date()}] Email sent: ${info.response}`);
       }
       if (cb) {
         cb();
@@ -293,9 +286,7 @@ function sendEmailMiner(server, cb) {
  * @param {function}  cb  Callback
  */
 function sendEmailOnline(server, cb) {
-  if (debug) {
-    console.log(`[${new Date()}] Sending online email`);
-  }
+  l.log(`[${new Date()}] Sending online email`);
   var mailOptions = {
     from: process.env.EMAIL_CLIENT,
     to: process.env.EMAIL_RECIPIENT,
@@ -307,11 +298,9 @@ function sendEmailOnline(server, cb) {
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
-        console.log(`[${new Date()}] Error sending email: ${error}`);
+        console.log(`Error sending email: ${error}`);
       } else {
-        if (debug) {
-          console.log(`[${new Date()}] Email sent: ${info.response}`);
-        }
+        l.log(`[${new Date()}] Email sent: ${info.response}`);
         server.isOffline = false;
       }
       if (cb) {
@@ -329,9 +318,7 @@ function sendEmailOnline(server, cb) {
  * @param {function}  cb  Callback
  */
 function sendEmailOffline(server, cb) {
-  if (debug) {
-    console.log(`[${new Date()}] Sending offline email`);
-  }
+  l.log(`[${new Date()}] Sending offline email`);
   var mailOptions = {
     from: process.env.EMAIL_CLIENT,
     to: process.env.EMAIL_RECIPIENT,
@@ -343,11 +330,9 @@ function sendEmailOffline(server, cb) {
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
-        console.log(`[${new Date()}] Error sending email: ${error}`);
+        console.log(`Error sending email: ${error}`);
       } else {
-        if (debug) {
-          console.log(`[${new Date()}] Email sent: ${info.response}`);
-        }
+        l.log(`[${new Date()}] Email sent: ${info.response}`);
         server.isOffline = true;
       }
       if (cb) {
@@ -476,7 +461,7 @@ function refreshServers() {
 }
 
 
-console.log(`[${new Date()}] Starting v${version}`);
+console.log(`Starting v${version}`);
 
 // Initial probe
 probeAll(updateAllSysinfo);
@@ -536,12 +521,10 @@ io.on('connection', function(socket){
 
 // Listen for connections on WEB_PORT
 http.listen(process.env.WEB_PORT, function(){
-  console.log(`listening on *:${process.env.WEB_PORT}`);
+  console.log(`web listening on *:${process.env.WEB_PORT}`);
 });
 
 setInterval(function() {
-  if (debug) {
-    console.log(`\n[${new Date()}] Checking`);
-  }
+  l.log(`Checking`);
   probeAll(updateAllSysinfo);
 }, process.env.PROBE_TIME);

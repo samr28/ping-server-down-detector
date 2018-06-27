@@ -156,7 +156,7 @@ function updateAllSysinfo(cb) {
     if (!server.isOffline) {
       request(`http://${server.ip}:${server.sysinfoPort}/api`, function (error, response, body) {
         if (error) {
-          console.log(`${server.name} (http://${server.ip}:${server.sysinfoPort}/api) get sysinfo error: ${error}`);
+          l.log(`${server.name} (http://${server.ip}:${server.sysinfoPort}/api) get sysinfo error: ${error}`);
         } else {
           var data = JSON.parse(body);
           server.sysinfo = data;
@@ -240,7 +240,7 @@ function probeMinerHR(server) {
       }
     });
   } else {
-    console.log(new Error(`${server.name} is not a miner!`));
+    l.log(new Error(`${server.name} is not a miner!`));
   }
 }
 
@@ -251,7 +251,7 @@ function probeMinerHR(server) {
  */
 function sendEmailMiner(server, cb) {
   server.sentHRMail = true;
-  l.log(`[${new Date()}] Sending miner email.`);
+  l.log(`Sending miner email.`);
   var mailOptions = {
     from: process.env.EMAIL_CLIENT,
     to: process.env.EMAIL_RECIPIENT,
@@ -266,10 +266,10 @@ function sendEmailMiner(server, cb) {
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
-        console.log(`Error sending email: ${error}`);
+        l.log(`Error sending email: ${error}`);
         server.sentHRMail = false;
       } else {
-        l.log(`[${new Date()}] Email sent: ${info.response}`);
+        l.log(`Email sent: ${info.response}`);
       }
       if (cb) {
         cb();
@@ -286,7 +286,7 @@ function sendEmailMiner(server, cb) {
  * @param {function}  cb  Callback
  */
 function sendEmailOnline(server, cb) {
-  l.log(`[${new Date()}] Sending online email`);
+  l.log(`Sending online email`);
   var mailOptions = {
     from: process.env.EMAIL_CLIENT,
     to: process.env.EMAIL_RECIPIENT,
@@ -298,9 +298,9 @@ function sendEmailOnline(server, cb) {
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
-        console.log(`Error sending email: ${error}`);
+        l.log(`Error sending email: ${error}`);
       } else {
-        l.log(`[${new Date()}] Email sent: ${info.response}`);
+        l.log(`Email sent: ${info.response}`);
         server.isOffline = false;
       }
       if (cb) {
@@ -318,7 +318,7 @@ function sendEmailOnline(server, cb) {
  * @param {function}  cb  Callback
  */
 function sendEmailOffline(server, cb) {
-  l.log(`[${new Date()}] Sending offline email`);
+  l.log(`Sending offline email`);
   var mailOptions = {
     from: process.env.EMAIL_CLIENT,
     to: process.env.EMAIL_RECIPIENT,
@@ -330,9 +330,9 @@ function sendEmailOffline(server, cb) {
   if (SEND_EMAIL) {
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
-        console.log(`Error sending email: ${error}`);
+        l.log(`Error sending email: ${error}`);
       } else {
-        l.log(`[${new Date()}] Email sent: ${info.response}`);
+        l.log(`Email sent: ${info.response}`);
         server.isOffline = true;
       }
       if (cb) {
@@ -461,7 +461,7 @@ function refreshServers() {
 }
 
 
-console.log(`Starting v${version}`);
+l.log(`Starting v${version}`);
 
 // Initial probe
 probeAll(updateAllSysinfo);
@@ -521,7 +521,7 @@ io.on('connection', function(socket){
 
 // Listen for connections on WEB_PORT
 http.listen(process.env.WEB_PORT, function(){
-  console.log(`web listening on *:${process.env.WEB_PORT}`);
+  l.log(`web listening on *:${process.env.WEB_PORT}`);
 });
 
 setInterval(function() {

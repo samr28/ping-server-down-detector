@@ -7,7 +7,7 @@ if (process.env.DEBUG == 1) {
 module.exports = {
   log: function(info) {
     if (debug) {
-      console.log(`\n[${new Date()}] ${info}`);
+      console.log(`[${new Date()}] ${info}`);
     }
   }
 }

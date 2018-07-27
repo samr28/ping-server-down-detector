@@ -1,0 +1,10 @@
+module.exports = {
+  PROBE_TIME: 500000,
+  WEB_UPDATE_TIME: 5000, // 5000
+  PORT: {
+    WEB: 3000,
+    SYSINFO: 3001,
+  },
+  LOW_HR: 130,
+  MAX_BEAT_TIME: 600000,
+}

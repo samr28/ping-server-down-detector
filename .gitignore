@@ -1,4 +1,5 @@
 run
 servesysinfo
+servers.js
 node_modules
 .ftpconfig

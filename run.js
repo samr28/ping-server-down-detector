@@ -9,6 +9,8 @@ var moment = require('moment');
 var version = require('./package.json').version;
 var name = require('./package.json').name;
 var homepage = require('./package.json').homepage;
+var servers = require('./servers.js').servers;
+var c = require('./const.js');
 var m = require('./miner.js');
 var l = require('./log.js');
 
@@ -18,7 +20,6 @@ if (process.env.DEBUG == 1) {
 } else {
   debug = false;
 }
-
 var SEND_EMAIL;
 if (process.env.SEND_EMAIL == 1) {
   SEND_EMAIL = true;
@@ -26,73 +27,11 @@ if (process.env.SEND_EMAIL == 1) {
   SEND_EMAIL = false;
 }
 
-var servers = [];
-var miners = [];
-
-servers[0] = {
-  name: 'sam-server-2',
-  isMiner: false,
-  sysinfo: {},
-  sysinfoPort: process.env.SAM_SERVER_2_SYSINFO_PORT,
-  ip: process.env.SAM_SERVER_2_IP,
-  port: process.env.SAM_SERVER_2_PORT,
-  isOffline: false,
-  dropdown: false
-};
-servers[1] = {
-  name: 'orangepione-1',
-  isMiner: false,
-  sysinfo: {},
-  sysinfoPort: process.env.ORANGEPIONE_1_SYSINFO_PORT,
-  ip: process.env.ORANGEPIONE_1_IP,
-  port: process.env.ORANGEPIONE_1_PORT,
-  isOffline: false,
-  dropdown: false
-};
-servers[2] = {
-  name: 'orangepione-2',
-  isMiner: false,
-  sysinfo: {},
-  sysinfoPort: process.env.ORANGEPIONE_2_SYSINFO_PORT,
-  ip: process.env.ORANGEPIONE_2_IP,
-  port: process.env.ORANGEPIONE_2_PORT,
-  isOffline: false,
-  dropdown: false
-};
-servers[3] = {
-  name: 'orangepione-3',
-  isMiner: false,
-  sysinfo: {},
-  sysinfoPort: process.env.ORANGEPIONE_3_SYSINFO_PORT,
-  ip: process.env.ORANGEPIONE_3_IP,
-  port: process.env.ORANGEPIONE_3_PORT,
-  isOffline: false,
-  dropdown: false
-};
-
-miners[0] = {
-  name: 'miner1',
-  isMiner: true,
-  status: {
-    lowHR: false,
-    badBeat: false
-  },
-  stats: {
-    currentHashrate: 0,
-    longHashrate: 0,
-    lastBeat: 0
-  },
-  api: process.env.MINER1_API,
-  sentHRMail: false,
-  isOffline: false,
-  dropdown: false
-};
-
 var transporter = nodemailer.createTransport({
   service: process.env.EMAIL_CLIENT,
   auth: {
     user: process.env.EMAIL_ADDRESS,
-    pass: process.env.EMAIL_PASSWORD
+    pass: process.env.EMAIL_PASSWORD,
   }
 });
 
@@ -103,25 +42,20 @@ var transporter = nodemailer.createTransport({
 function getAllData() {
   var allData = {
     servers: [],
-    miners: []
   };
-  servers.forEach(function (server) {
-    allData.servers.push({
-      name: server.name,
-      isOffline: server.isOffline,
-      sysinfo: server.sysinfo,
-      dropdown: server.dropdown
-    });
-  });
-  miners.forEach(function (server) {
-    allData.miners.push({
-      name: server.name,
-      status: server.status,
-      stats: server.stats,
-      isOffline: server.isOffline,
-      dropdown: server.dropdown
-    });
-  });
+  // servers.forEach(function (server) {
+  //   var currentServer = {
+  //     name: server.name,
+  //     isOffline: server.isOffline,
+  //     sysinfo: server.sysinfo,
+  //     dropdown: server.dropdown,
+  //   };
+  //   if (server.type === 'miner') {
+  //     currentServer.status = server.status,
+  //     currentServer.stats = server.stats,
+  //   }
+  //   allData.servers.push(currentServer);
+  // });
   return allData;
 }
 
@@ -129,21 +63,12 @@ function getAllData() {
  * Check if all servers are online
  * @return {Boolean} True when all servers are online
  */
-let allOnline = null;
 function allServersOnline() {
   servers.forEach(function (server) {
     if (server.isOffline) {
-      allOnline = false;
       return false;
     }
   });
-  miners.forEach(function (server) {
-    if (server.isOffline) {
-      allOnline = false;
-      return false;
-    }
-  });
-  allOnline = true;
   return true;
 }
 
@@ -154,9 +79,9 @@ function allServersOnline() {
 function updateAllSysinfo(cb) {
   servers.forEach(function (server) {
     if (!server.isOffline) {
-      request(`http://${server.ip}:${server.sysinfoPort}/api`, function (error, response, body) {
+      request(constructSysinfoRequest(server), function (error, response, body) {
         if (error) {
-          l.log(`${server.name} (http://${server.ip}:${server.sysinfoPort}/api) get sysinfo error: ${error}`);
+          l.log(`${server.name} (${constructSysinfoRequest(server)}) get sysinfo error: ${error}`);
         } else {
           var data = JSON.parse(body);
           server.sysinfo = data;
@@ -170,6 +95,15 @@ function updateAllSysinfo(cb) {
 }
 
 /**
+ * Construct URL for sysinfo request
+ * @param  {Object} server Server
+ * @return {String}        URL
+ */
+function constructSysinfoRequest(server) {
+  return `http://${server.ip}:${server.sysinfoPort}/api`;
+}
+
+/**
  * Ping all of the servers
  * @param {function}  cb  Callback
  */
@@ -177,10 +111,10 @@ function probeAll(cb) {
   servers.forEach(function (server) {
     probe(server, cb);
   });
-  miners.forEach(function (server) {
-    probeMiner(server, cb);
-    probeMinerHR(server, cb);
-  })
+  // miners.forEach(function (server) {
+  //   probeMiner(server, cb);
+  //   probeMinerHR(server, cb);
+  // })
 }
 
 /**
@@ -198,6 +132,9 @@ function probe(server, cb) {
       sendEmailOnline(server, cb);
     }
   });
+  if (server.type === 'miner') {
+    probeMinerHR(server);
+  }
 }
 
 /**
@@ -225,20 +162,28 @@ function probeMiner(server, cb) {
  * @param  {Object} server Server to check
  */
 function probeMinerHR(server) {
-  if (server.isMiner) {
-    m.getStats(function (data) {
-      server.stats = data;
-      server.status.lowHR = data.longHashrate < process.env.LOW_HR ? true : false;
-      server.status.badBeat = ((new Date).getTime()) - data.lastBeat > process.env.MAX_BEAT_TIME ? true : false;
+  if (server.type === 'miner') {
+    m.updateStats(server, function () {
       if (server.status.lowHR || server.status.badBeat) {
-        if (!server.sentHRMail && !server.isOffline) {
-          sendEmailMiner(server);
-        }
+        sendEmailMiner(server);
       }
       if (!server.status.lowHR && !server.status.badBeat) {
         server.sentHRMail = false;
       }
     });
+    // m.getStats(server, function (data) {
+    //   server.stats = data;
+    //   server.status.lowHR = data.longHashrate < process.env.LOW_HR ? true : false;
+    //   server.status.badBeat = ((new Date).getTime()) - data.lastBeat > process.env.MAX_BEAT_TIME ? true : false;
+    //   if (server.status.lowHR || server.status.badBeat) {
+    //     if (!server.sentHRMail && !server.isOffline) {
+    //       sendEmailMiner(server);
+    //     }
+    //   }
+    //   if (!server.status.lowHR && !server.status.badBeat) {
+    //     server.sentHRMail = false;
+    //   }
+    // });
   } else {
     l.log(new Error(`${server.name} is not a miner!`));
   }
@@ -250,34 +195,35 @@ function probeMinerHR(server) {
  * @param {function}  cb  Callback
  */
 function sendEmailMiner(server, cb) {
-  server.sentHRMail = true;
-  l.log(`Sending miner email.`);
-  var mailOptions = {
-    from: process.env.EMAIL_CLIENT,
-    to: process.env.EMAIL_RECIPIENT,
-    subject: `${server.name} is having problems!`,
-    text: `${server.name} started having problems around: ${new Date()}
-    \n\nLong (3h) hashrate is ${server.stats.longHashrate} MH. Should be > ${process.env.LOW_HR}.
-    \nCurrent (30m) hashrate is ${server.stats.currentHashrate} MH.
-    \nLast beat was ${new Date(server.stats.lastBeat)}.
-    \n\nChecking every ${process.env.PROBE_TIME} ms
-    \n\nping-server-down-detector v${version} - ${homepage}`
-  };
-  if (SEND_EMAIL) {
-    transporter.sendMail(mailOptions, function(error, info){
-      if (error) {
-        l.log(`Error sending email: ${error}`);
-        server.sentHRMail = false;
-      } else {
-        l.log(`Email sent: ${info.response}`);
-      }
-      if (cb) {
-        cb();
-      }
-    });
-  } else if (cb) {
-    cb();
-  }
+  l.log(`Send email miner ${server.name}`)
+  // server.sentHRMail = true;
+  // l.log(`Sending miner email.`);
+  // var mailOptions = {
+  //   from: process.env.EMAIL_CLIENT,
+  //   to: process.env.EMAIL_RECIPIENT,
+  //   subject: `${server.name} is having problems!`,
+  //   text: `${server.name} started having problems around: ${new Date()}
+  //   \n\nLong (3h) hashrate is ${server.stats.longHashrate} MH. Should be > ${process.env.LOW_HR}.
+  //   \nCurrent (30m) hashrate is ${server.stats.currentHashrate} MH.
+  //   \nLast beat was ${new Date(server.stats.lastBeat)}.
+  //   \n\nChecking every ${process.env.PROBE_TIME} ms
+  //   \n\nping-server-down-detector v${version} - ${homepage}`
+  // };
+  // if (SEND_EMAIL) {
+  //   transporter.sendMail(mailOptions, function(error, info){
+  //     if (error) {
+  //       l.log(`Error sending email: ${error}`);
+  //       server.sentHRMail = false;
+  //     } else {
+  //       l.log(`Email sent: ${info.response}`);
+  //     }
+  //     if (cb) {
+  //       cb();
+  //     }
+  //   });
+  // } else if (cb) {
+  //   cb();
+  // }
 }
 
 /**
@@ -286,30 +232,30 @@ function sendEmailMiner(server, cb) {
  * @param {function}  cb  Callback
  */
 function sendEmailOnline(server, cb) {
-  l.log(`Sending online email`);
-  var mailOptions = {
-    from: process.env.EMAIL_CLIENT,
-    to: process.env.EMAIL_RECIPIENT,
-    subject: `${server.name} is back online!`,
-    text: `${server.name} came back around ${new Date()}
-    \n\nChecking every ${process.env.PROBE_TIME} ms
-    \n\nping-server-down-detector v${version} - ${homepage}`
-  };
-  if (SEND_EMAIL) {
-    transporter.sendMail(mailOptions, function(error, info){
-      if (error) {
-        l.log(`Error sending email: ${error}`);
-      } else {
-        l.log(`Email sent: ${info.response}`);
-        server.isOffline = false;
-      }
-      if (cb) {
-        cb();
-      }
-    });
-  } else if (cb) {
-    cb();
-  }
+  l.log(`Sending online email for ${server}`);
+  // var mailOptions = {
+  //   from: process.env.EMAIL_CLIENT,
+  //   to: process.env.EMAIL_RECIPIENT,
+  //   subject: `${server.name} is back online!`,
+  //   text: `${server.name} came back around ${new Date()}
+  //   \n\nChecking every ${process.env.PROBE_TIME} ms
+  //   \n\nping-server-down-detector v${version} - ${homepage}`
+  // };
+  // if (SEND_EMAIL) {
+  //   transporter.sendMail(mailOptions, function(error, info){
+  //     if (error) {
+  //       l.log(`Error sending email: ${error}`);
+  //     } else {
+  //       l.log(`Email sent: ${info.response}`);
+  //       server.isOffline = false;
+  //     }
+  //     if (cb) {
+  //       cb();
+  //     }
+  //   });
+  // } else if (cb) {
+  //   cb();
+  // }
 }
 
 /**
@@ -318,30 +264,30 @@ function sendEmailOnline(server, cb) {
  * @param {function}  cb  Callback
  */
 function sendEmailOffline(server, cb) {
-  l.log(`Sending offline email`);
-  var mailOptions = {
-    from: process.env.EMAIL_CLIENT,
-    to: process.env.EMAIL_RECIPIENT,
-    subject: `${server.name} is offline!`,
-    text: `${server.name} went offline around ${new Date()}
-    \n\nChecking every ${process.env.PROBE_TIME} ms
-    \n\nping-server-down-detector v${version} - ${homepage}`
-  };
-  if (SEND_EMAIL) {
-    transporter.sendMail(mailOptions, function(error, info){
-      if (error) {
-        l.log(`Error sending email: ${error}`);
-      } else {
-        l.log(`Email sent: ${info.response}`);
-        server.isOffline = true;
-      }
-      if (cb) {
-        cb();
-      }
-    });
-  } else if (cb) {
-    cb();
-  }
+  l.log(`Sending offline email for ${server}`);
+  // var mailOptions = {
+  //   from: process.env.EMAIL_CLIENT,
+  //   to: process.env.EMAIL_RECIPIENT,
+  //   subject: `${server.name} is offline!`,
+  //   text: `${server.name} went offline around ${new Date()}
+  //   \n\nChecking every ${process.env.PROBE_TIME} ms
+  //   \n\nping-server-down-detector v${version} - ${homepage}`
+  // };
+  // if (SEND_EMAIL) {
+  //   transporter.sendMail(mailOptions, function(error, info){
+  //     if (error) {
+  //       l.log(`Error sending email: ${error}`);
+  //     } else {
+  //       l.log(`Email sent: ${info.response}`);
+  //       server.isOffline = true;
+  //     }
+  //     if (cb) {
+  //       cb();
+  //     }
+  //   });
+  // } else if (cb) {
+  //   cb();
+  // }
 }
 
 /**
@@ -416,28 +362,28 @@ function generateHTML() {
       }
       html += `</div><br>`;
   });
-  data.miners.forEach(function (server) {
-    html += `
-      <div class="card waves-effect toggleServerInfo" data-server="${server.name}">
-        <div class="card-header ${server.isOffline ? 'danger' : (server.status.lowHR || server.status.badBeat ? 'warning' : 'success')}-color white-text">
-          <div class="row">
-            <div class="col-sm">
-              ${server.name}
-            </div>
-            <div class="col-sm" style="text-align: right">
-              <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
-            </div>
-          </div>
-        </div>
-        <div class="collapse card-body ${server.dropdown ? 'show' : ''}" id="collapse${server.name}">
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item" id="mydiv">Current hashrate (30m): ${Number((server.stats.currentHashrate).toFixed(2))} MH</li>
-            <li class="list-group-item">Long hashrate (3h): ${Number((server.stats.longHashrate).toFixed(2))} MH</li>
-            <li class="list-group-item">Last beat: ${moment(new Date(server.stats.lastBeat)).fromNow()} (${new Date(server.stats.lastBeat)})</li>
-          </ul>
-        </div>
-      </div>`;
-  });
+  // data.miners.forEach(function (server) {
+  //   html += `
+  //     <div class="card waves-effect toggleServerInfo" data-server="${server.name}">
+  //       <div class="card-header ${server.isOffline ? 'danger' : (server.status.lowHR || server.status.badBeat ? 'warning' : 'success')}-color white-text">
+  //         <div class="row">
+  //           <div class="col-sm">
+  //             ${server.name}
+  //           </div>
+  //           <div class="col-sm" style="text-align: right">
+  //             <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
+  //           </div>
+  //         </div>
+  //       </div>
+  //       <div class="collapse card-body ${server.dropdown ? 'show' : ''}" id="collapse${server.name}">
+  //         <ul class="list-group list-group-flush">
+  //           <li class="list-group-item" id="mydiv">Current hashrate (30m): ${Number((server.stats.currentHashrate).toFixed(2))} MH</li>
+  //           <li class="list-group-item">Long hashrate (3h): ${Number((server.stats.longHashrate).toFixed(2))} MH</li>
+  //           <li class="list-group-item">Last beat: ${moment(new Date(server.stats.lastBeat)).fromNow()} (${new Date(server.stats.lastBeat)})</li>
+  //         </ul>
+  //       </div>
+  //     </div>`;
+  // });
   return html;
 }
 
@@ -446,11 +392,8 @@ function generateHTML() {
  */
 function refreshAll() {
   io.sockets.emit('update server', generateHTML());
-  // Check if all servers online has changed since last check
-  if (allServersOnline() != allOnline) {
-    io.sockets.emit('update title', allServersOnline());
-    io.sockets.emit('update favicon', allServersOnline());
-  }
+  io.sockets.emit('update title', allServersOnline());
+  io.sockets.emit('update favicon', allServersOnline());
 }
 
 /**
@@ -459,7 +402,6 @@ function refreshAll() {
 function refreshServers() {
   io.sockets.emit('update server', generateHTML());
 }
-
 
 l.log(`Starting v${version}`);
 
@@ -480,12 +422,14 @@ let intervalObj;
 
 // Update inner html and refresh when buttons are clicked
 io.on('connection', function(socket){
+  l.log(`Client connected`);
   let globalToggle = true;
   intervalObj = setInterval(() => {
-    probeAll(updateAllSysinfo(refreshAll));
-  }, process.env.WEB_UPDATE_TIME);
+    // probeAll(updateAllSysinfo(refreshAll));
+    refreshAll();
+  }, c.WEB_UPDATE_TIME);
   refreshAll();
-  io.sockets.emit('update footer', `<a href="${homepage}" target="_blank">${name}</a> v${version}`, `Refreshing every ${process.env.WEB_UPDATE_TIME} ms`);
+  io.sockets.emit('update footer', `<a href="${homepage}" target="_blank">${name}</a> v${version}`, `Refreshing every ${c.WEB_UPDATE_TIME} ms`);
   io.sockets.emit('update favicon', allServersOnline());
   io.sockets.emit('update title', allServersOnline());
   socket.on('refresh', function(){
@@ -498,9 +442,6 @@ io.on('connection', function(socket){
     servers.forEach(function (server) {
       server.dropdown = globalToggle;
     });
-    miners.forEach(function (server) {
-      server.dropdown = globalToggle;
-    });
     globalToggle = !globalToggle;
     refreshServers();
   });
@@ -510,21 +451,16 @@ io.on('connection', function(socket){
         server.dropdown = !server.dropdown;
       }
     });
-    miners.forEach(function (server) {
-      if (server.name === s) {
-        server.dropdown = !server.dropdown;
-      }
-    });
     refreshServers();
   });
 });
 
 // Listen for connections on WEB_PORT
-http.listen(process.env.WEB_PORT, function(){
-  l.log(`web listening on *:${process.env.WEB_PORT}`);
+http.listen(c.PORT.WEB, function(){
+  l.log(`web listening on *:${c.PORT.WEB}`);
 });
 
 setInterval(function() {
   l.log(`Checking`);
   probeAll(updateAllSysinfo);
-}, process.env.PROBE_TIME);
+}, c.PROBE_TIME);

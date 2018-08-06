@@ -7,7 +7,7 @@ module.exports = {
     if (server.type === 'miner') {
       request(server.api, function (error, response, body) {
         if (error) {
-          console.log('[Miner] Error: ' + error);
+          l.log(error, 'miner')
         }
         var data = JSON.parse(body);
         var ret = {};
@@ -23,12 +23,12 @@ module.exports = {
             server.lowHR = true;
           }
         } else {
-          l.log(new Error(`No data for ${server.name}`));
+          l.log(new Error(`No data for ${server.name}`), 'miner');
         }
         cb(ret);
       });
     } else {
-      l.log(new Error(`${server.name} is not a miner!`));
+      l.log(new Error(`${server.name} is not a miner!`), 'miner');
     }
   },
   updateStats: function(server, cb) {
@@ -54,12 +54,12 @@ module.exports = {
             server.status.lowHR = true;
           }
         } else {
-          l.log(new Error(`No data for ${server.name}`));
+          l.log(new Error(`No data for ${server.name}`), 'miner');
         }
         cb(ret);
       });
     } else {
-      l.log(new Error(`${server.name} is not a miner!`));
+      l.log(new Error(`${server.name} is not a miner!`), 'miner');
     }
   }
 }

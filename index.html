@@ -24,7 +24,6 @@
       socket.on('update server info', function (info) {
         // Array of server objects
         var servers = info.servers;
-        console.log(servers);
         for (var i = 0; i < servers.length; i++) {
           $(`#${servers[i].name}-cpu-temp`).html(`${servers[i].sysinfo.cpuTemp.main}`);
         }

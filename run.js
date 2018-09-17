@@ -154,14 +154,19 @@ function probe(server, cb) {
     l.log(`${server.name} (${server.ip}:${server.port}): ${available ? 'online' : 'offline'}`, 'probe');
     if (!available && !server.isOffline) {
       n.notify(server, cb);
+      return;
     }
     if (available && server.isOffline) {
       n.notify(server, cb);
+      return;
     }
     if (server.type === 'miner') {
       probeMinerHR(server, cb);
-    } else if (cb) {
+      return;
+    }
+    if (cb) {
       cb();
+      return;
     }
   });
 }
@@ -182,6 +187,7 @@ function probeMinerHR(server, cb) {
       }
       if (cb) {
         cb();
+        return;
       }
     });
   } else {
@@ -304,8 +310,8 @@ function updateWeb() {
  * Generate new HTML for servers
  */
 function refreshServers() {
-  // io.sockets.emit('update server', generateHTML());
-  io.sockets.emit('update server info', );
+  io.sockets.emit('update server', generateHTML());
+  // io.sockets.emit('update server info', );
 }
 
 l.log(`Starting v${version}`);

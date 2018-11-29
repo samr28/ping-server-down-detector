@@ -15,6 +15,7 @@ if (process.env.DEBUG == 1) {
 }
 
 var data = {
+  timestamp: "",
   cpu: {},
   cpuTemp: {},
   cpuLoad: {},
@@ -80,6 +81,7 @@ function updateData(callback) {
         });
     }
   ], function (err, results) {
+    data.timestamp = new Date();
     if (callback) {
       callback();
     }
@@ -149,6 +151,7 @@ function updateDynamicData(callback) {
         });
     }
   ], function (err, results) {
+    data.timestamp = new Date();
     if (callback) {
       callback();
     }

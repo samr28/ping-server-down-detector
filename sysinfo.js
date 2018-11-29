@@ -133,7 +133,7 @@ function updateDynamicData(callback) {
             cb()
           }
         });
-    }
+    },
     function (cb) {
       let uptimeCmd = `./scripts/uptime`;
       var yourscript = exec(uptimeCmd,

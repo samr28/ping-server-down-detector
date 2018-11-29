@@ -2,6 +2,10 @@ var si = require('systeminformation');
 var app = require('express')();
 var http = require('http').Server(app);
 var async = require("async");
+const { exec } = require("child_process");
+
+var l = require('./log.js');
+var c = require('./const.js');
 
 var debug;
 if (process.env.DEBUG == 1) {
@@ -17,7 +21,8 @@ var data = {
   mem: {},
   storage: {},
   net: {},
-  latency: {}
+  latency: {},
+  uptime: ""
 };
 
 /**
@@ -59,6 +64,20 @@ function updateData(callback) {
         data.storage = info;
         cb();
       });
+    },
+    function (cb) {
+      let uptimeCmd = `./scripts/uptime`;
+      var script = exec(uptimeCmd,
+        (error, stdout, stderr) => {
+          if (!error && !stderr) {
+            data.uptime = stdout;
+            cb();
+          } else {
+            console.log("Get uptime error: ", error);
+            console.log(stderr);
+            cb()
+          }
+        });
     }
   ], function (err, results) {
     if (callback) {
@@ -100,6 +119,20 @@ function updateDynamicData(callback) {
         data.storage = info;
         cb();
       });
+    },
+    function (cb) {
+      let uptimeCmd = `./scripts/uptime`;
+      var script = exec(uptimeCmd,
+        (error, stdout, stderr) => {
+          if (!error && !stderr) {
+            data.uptime = stdout;
+            cb();
+          } else {
+            console.log("Get uptime error: ", error);
+            console.log(stderr);
+            cb()
+          }
+        });
     }
   ], function (err, results) {
     if (callback) {
@@ -118,6 +151,6 @@ app.get('/api', function(req, res){
 });
 
 // Listen for connections on WEB_PORT
-http.listen(process.env.WEB_PORT, function(){
-  console.log(`listening on *:${process.env.WEB_PORT}`);
+http.listen(c.PORT.SYSINFO, function(){
+  l.log(`listening on *:${c.PORT.SYSINFO}`, 'sysinfo');
 });

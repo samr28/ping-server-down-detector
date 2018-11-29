@@ -81,50 +81,7 @@ function updateSysInfo(server, cb) {
  * @param  {Function} cb Callback
  */
 function updateAllSysinfo(cb) {
-
   async.map(servers, updateSysInfo, cb);
-
-  // async.parallel([
-  //   updateSysInfo,
-  //   updateSysInfo,
-  // ], cb);
-
-  // var requests = [];
-  // servers.forEach(function (server) {
-  //   requests.push(
-  //     request(constructSysinfoRequest(server), function (error, response, body) {
-  //       if (error) {
-  //         l.log(`${server.name} (${constructSysinfoRequest(server)}) get sysinfo error: ${error}`);
-  //       } else {
-  //         var data = JSON.parse(body);
-  //         server.sysinfo = data;
-  //       }
-  //       if (cb) {
-  //         cb();
-  //       }
-  //     });
-  //   );
-  // });
-
-  // console.log(requests);
-
-  // async.parallel(requests, cb);
-
-  // servers.forEach(function (server) {
-  //   if (!server.isOffline) {
-  //     request(constructSysinfoRequest(server), function (error, response, body) {
-  //       if (error) {
-  //         l.log(`${server.name} (${constructSysinfoRequest(server)}) get sysinfo error: ${error}`);
-  //       } else {
-  //         var data = JSON.parse(body);
-  //         server.sysinfo = data;
-  //         if (cb) {
-  //           cb();
-  //         }
-  //       }
-  //     });
-  //   }
-  // });
 }
 
 /**
@@ -222,6 +179,7 @@ function generateHTML() {
         var cpuLoad = server.sysinfo.cpuLoad;
         var mem = server.sysinfo.mem;
         var storage = server.sysinfo.storage[0];
+        var uptime = server.sysinfo.uptime;
         html += `
         <div class="collapse card-body ${server.dropdown ? 'show' : ''}" id="collapse${server.name}">
           <ul class="list-group list-group-flush">
@@ -236,6 +194,9 @@ function generateHTML() {
                 </div>
                 <div class="col" id="${server.name}-cpu-temp">
                   <i class="fas fa-thermometer-half"></i> ${cpu.temp} C
+                </div>
+                <div class="col" id="${server.name}-uptime">
+                  <i class="fas fa-clock"></i> ${uptime}
                 </div>
               </div>
             </li>
@@ -324,6 +285,7 @@ app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
 
+// API route
 app.get('/api', function(req, res){
   res.write(JSON.stringify(getAllData()));
   res.end();
@@ -336,26 +298,27 @@ io.on('connection', function(socket){
   l.log(`Client connected`, 'web');
   let globalToggle = true;
   intervalObj = setInterval(() => {
-    // probeAll(updateAllSysinfo(refreshAll));
     refreshAll();
   }, c.WEB_UPDATE_TIME);
   refreshAll();
   io.sockets.emit('update footer', `<a href="${homepage}" target="_blank">${name}</a> v${version}`, `Refreshing every ${c.WEB_UPDATE_TIME} ms`);
   socket.on('refresh', function(){
-    // probeAll(updateAllSysinfo(refreshAll));
-    async.series([
-      probeAll,
-      updateAllSysinfo,
-      updateWeb,
-    ], function(err) {
-      l.log(err)
-    });
+    l.log(`Client refresh all`, 'web');
+    refreshAll();
+    // async.series([
+    //   probeAll,
+    //   updateAllSysinfo,
+    //   updateWeb,
+    // ], function(err) {
+    //   l.log(err);
+    // });
   });
   socket.on('disconnect', function() {
     l.log(`Client disconnected`, 'web');
     clearInterval(intervalObj);
   });
   socket.on('toggleAll', function(){
+    l.log(`Client toggleAll`, 'web');
     servers.forEach(function (server) {
       server.dropdown = globalToggle;
     });

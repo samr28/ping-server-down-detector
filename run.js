@@ -17,16 +17,14 @@ var name = c.APP_INFO.NAME;
 var homepage = c.APP_INFO.HOMEPAGE;
 var servers = require('./servers.js').servers;
 
-var debug;
+var debug = false;
 if (process.env.DEBUG == 1) {
   debug = true;
-} else {
-  debug = false;
 }
 
 /**
  * Get public data on all servers
- * @return {object} Data
+ * @return {Object} Data
  */
 function getAllData() {
   var allData = {
@@ -61,11 +59,33 @@ function allServersOnline() {
   return true;
 }
 
+/**
+ * Update sysinfo for all servers
+ * @param  {Function} cb Callback
+ */
+function updateAllSysinfo(cb) {
+  async.map(servers, updateSysInfo, cb);
+}
+
+/**
+ * Update sysinfo for the specified server
+ * @param  {Object}   server Server object
+ * @param  {Function} cb     Callback
+ */
 function updateSysInfo(server, cb) {
+  if (!server.hasSysinfo) {
+    if (debug) {
+      l.log(`${server.name} hasSysinfo false`, 'sysinfo');
+    }
+    if (cb) {
+      cb();
+    }
+    return;
+  }
   var url = constructSysinfoRequest(server);
   request(url, function (error, response, body) {
     if (error) {
-      l.log(`${server.name} (${constructSysinfoRequest(server)}) get sysinfo error: ${error}`, 'sysinfo');
+      l.log(`${server.name} (${url}) get sysinfo error: ${error}`, 'sysinfo');
     } else {
       var data = JSON.parse(body);
       server.sysinfo = data;
@@ -74,14 +94,6 @@ function updateSysInfo(server, cb) {
       cb();
     }
   });
-}
-
-/**
- * Update sysinfo for all servers
- * @param  {Function} cb Callback
- */
-function updateAllSysinfo(cb) {
-  async.map(servers, updateSysInfo, cb);
 }
 
 /**
@@ -137,7 +149,6 @@ function probeMinerHR(server, cb) {
     m.updateStats(server, function () {
       if (server.status.lowHR || server.status.badBeat) {
         n.notify(server);
-        // sendEmailMiner(server);
       }
       if (!server.status.lowHR && !server.status.badBeat) {
         server.sentHRMail = false;
@@ -166,7 +177,7 @@ function generateHTML() {
         <div class="card-header ${server.isOffline ? 'danger' : 'success'}-color white-text">
           <div class="row">
             <div class="col">
-              ${server.name}
+              ${server.name} (${moment(server.sysinfo.timestamp).format("h:mm:ss")})
             </div>
             <div class="col" style="text-align: right">
               <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
@@ -304,14 +315,12 @@ io.on('connection', function(socket){
   io.sockets.emit('update footer', `<a href="${homepage}" target="_blank">${name}</a> v${version}`, `Refreshing every ${c.WEB_UPDATE_TIME} ms`);
   socket.on('refresh', function(){
     l.log(`Client refresh all`, 'web');
-    refreshAll();
-    // async.series([
-    //   probeAll,
-    //   updateAllSysinfo,
-    //   updateWeb,
-    // ], function(err) {
-    //   l.log(err);
-    // });
+    probeAll(function() {
+      updateAllSysinfo(function() {
+        io.sockets.emit('refresh-done');
+        refreshAll();
+      });
+    });
   });
   socket.on('disconnect', function() {
     l.log(`Client disconnected`, 'web');
@@ -342,5 +351,9 @@ http.listen(c.PORT.WEB, function(){
 
 setInterval(function() {
   l.log(`Checking`);
-  probeAll(updateAllSysinfo);
+  probeAll(function() {
+    updateAllSysinfo(function() {
+      io.sockets.emit('refresh-finish');
+    });
+  });
 }, c.PROBE_TIME);

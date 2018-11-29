@@ -7,7 +7,8 @@
     <!-- Bootstrap core CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Material Design Bootstrap -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.4/css/mdb.min.css" rel="stylesheet">
+    <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.4/css/mdb.min.css" rel="stylesheet"> -->
+    <link href="https://mdbootstrap.com/wp-content/themes/mdbootstrap4/css/compiled-4.5.9.min.css?ver=4.5.6" rel="stylesheet">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link id="shortcuticon" rel="shortcut icon" href="https://i.imgur.com/EWO21Xi.png" type="image/x-icon">
@@ -44,7 +45,24 @@
           </p>`);
       });
       $('#refresh').click(function() {
+        $('#refresh').html(`
+          <div class="preloader-wrapper small active">
+            <div class="spinner-layer spinner-blue-only">
+              <div class="circle-clipper left">
+                <div class="circle"></div>
+              </div>
+              <div class="gap-patch">
+                <div class="circle"></div>
+              </div>
+              <div class="circle-clipper right">
+                <div class="circle"></div>
+              </div>
+            </div>
+          </div>`);
         socket.emit('refresh');
+      });
+      socket.on('refresh-done', function () {
+        $('#refresh').html(`<i class="fas fa-sync"></i>`);
       });
       $('#toggleAll').click(function() {
         socket.emit('toggleAll');

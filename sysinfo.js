@@ -21,7 +21,8 @@ var data = {
   mem: {},
   storage: {},
   net: {},
-  latency: {}
+  latency: {},
+  uptime: ""
 };
 
 /**
@@ -63,6 +64,20 @@ function updateData(callback) {
         data.storage = info;
         cb();
       });
+    },
+    function (cb) {
+      let uptimeCmd = `./scripts/uptime`;
+      var script = exec(uptimeCmd,
+        (error, stdout, stderr) => {
+          if (!error && !stderr) {
+            data.uptime = stdout;
+            cb();
+          } else {
+            console.log("Get uptime error: ", error);
+            console.log(stderr);
+            cb()
+          }
+        });
     }
   ], function (err, results) {
     if (callback) {
@@ -104,6 +119,20 @@ function updateDynamicData(callback) {
         data.storage = info;
         cb();
       });
+    },
+    function (cb) {
+      let uptimeCmd = `./scripts/uptime`;
+      var script = exec(uptimeCmd,
+        (error, stdout, stderr) => {
+          if (!error && !stderr) {
+            data.uptime = stdout;
+            cb();
+          } else {
+            console.log("Get uptime error: ", error);
+            console.log(stderr);
+            cb()
+          }
+        });
     }
     function (cb) {
       let uptimeCmd = `./scripts/uptime`;

@@ -164,6 +164,14 @@ function probeMinerHR(server, cb) {
 }
 
 /**
+ * Returns true if the server currently has sysinfo
+ * @param  {Object} server Server info
+ */
+function currentlyHasSysinfo(server) {
+  return server.sysinfo && Object.keys(server.sysinfo).length !== 0;
+}
+
+/**
  * Generate new HTML for the status page
  * @return {String} HTML
  */
@@ -180,11 +188,16 @@ function generateHTML() {
               ${server.name} (${moment(server.sysinfo.timestamp).format("h:mm:ss")})
             </div>
             <div class="col" style="text-align: right">
-              <i class="grabbing fas fa-chevron-${server.dropdown ? 'up' : 'down'}"></i>
+              ${
+                // Show chevron if has serverinfo
+                currentlyHasSysinfo(server) ?
+                  "<i class='fas fa-chevron-" + (server.dropdown ? 'up' : 'down') + "'></i>"
+                  : ""
+                }
             </div>
           </div>
         </div>`;
-      if (server.sysinfo && Object.keys(server.sysinfo).length !== 0) {
+      if (currentlyHasSysinfo(server)) {
         var cpu = server.sysinfo.cpu;
         cpu.temp = server.sysinfo.cpuTemp.main;
         var cpuLoad = server.sysinfo.cpuLoad;

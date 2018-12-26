@@ -17,13 +17,13 @@ module.exports = {
 }
 
 function notify(server, cb) {
-  l.log(`${server.name} is now ${server.isOffline ? 'offline' : 'online'}`, 'notify');
+  l.log(`${server.name} is now ${server.online ? 'online' : 'offline'}`, 'notify');
   var mailOptions = {
     from: c.EMAIL.FROM,
     to: c.EMAIL.TO,
-    subject: `${server.name} is ${server.isOffline ? 'offline' : 'back online'}`,
+    subject: `${server.name} is ${server.online ? 'back online' : 'offline'}`,
     text:
-      `${server.name} ${server.isOffline ? 'went offline' : 'came online'}
+      `${server.name} ${server.online ? 'came online' : 'went offline'}
       around ${new Date()}`,
   };
   if (server.type === 'miner') {
@@ -43,7 +43,6 @@ function notify(server, cb) {
         l.log(`Error sending email: ${error}`, 'notify');
       } else {
         l.log(`Email sent: ${info.response}`, 'notify');
-        server.isOffline = false;
       }
       if (cb) {
         cb();

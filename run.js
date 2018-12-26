@@ -33,7 +33,8 @@ function getAllData() {
   servers.forEach(function (server) {
     var currentServer = {
       name: server.name,
-      isOffline: server.isOffline,
+      online: server.online,
+      hasSysinfo: server.hasSysinfo,
       sysinfo: server.sysinfo,
       dropdown: server.dropdown,
     };
@@ -52,7 +53,7 @@ function getAllData() {
  */
 function allServersOnline() {
   servers.forEach(function (server) {
-    if (server.isOffline) {
+    if (!server.online) {
       return false;
     }
   });
@@ -73,10 +74,18 @@ function updateAllSysinfo(cb) {
  * @param  {Function} cb     Callback
  */
 function updateSysInfo(server, cb) {
+  // Check if has sysinfo
   if (!server.hasSysinfo) {
     if (debug) {
       l.log(`${server.name} hasSysinfo false`, 'sysinfo');
     }
+    if (cb) {
+      cb();
+    }
+    return;
+  }
+  // Check if online
+  if (!server.online) {
     if (cb) {
       cb();
     }
@@ -121,14 +130,15 @@ function probeAll(cb) {
 function probe(server, cb) {
   tcpp.probe(server.ip, server.port, function(err, available) {
     l.log(`${server.name} (${server.ip}:${server.port}): ${available ? 'online' : 'offline'}`, 'probe');
-    if (!available && !server.isOffline) {
-      n.notify(server, cb);
-      return;
-    }
-    if (available && server.isOffline) {
-      n.notify(server, cb);
-      return;
-    }
+    server.online = available;
+    // if (!available && server.online) {
+    //   n.notify(server, cb);
+    //   return;
+    // }
+    // if (available && server.online) {
+    //   n.notify(server, cb);
+    //   return;
+    // }
     if (server.type === 'miner') {
       probeMinerHR(server, cb);
       return;
@@ -168,7 +178,7 @@ function probeMinerHR(server, cb) {
  * @param  {Object} server Server info
  */
 function currentlyHasSysinfo(server) {
-  return server.sysinfo && Object.keys(server.sysinfo).length !== 0;
+  return server.hasSysinfo && server.sysinfo && Object.keys(server.sysinfo).length !== 0;
 }
 
 /**
@@ -182,7 +192,7 @@ function generateHTML() {
   data.servers.forEach(function (server) {
     html += `
       <div class="card waves-effect toggleServerInfo" data-server="${server.name}">
-        <div class="card-header ${server.isOffline ? 'danger' : 'success'}-color white-text">
+        <div class="card-header ${server.online ? 'success' : 'danger'}-color white-text">
           <div class="row">
             <div class="col">
               ${server.name} (${moment(server.sysinfo.timestamp).format("h:mm:ss")})
@@ -256,7 +266,7 @@ function generateHTML() {
   // data.miners.forEach(function (server) {
   //   html += `
   //     <div class="card waves-effect toggleServerInfo" data-server="${server.name}">
-  //       <div class="card-header ${server.isOffline ? 'danger' : (server.status.lowHR || server.status.badBeat ? 'warning' : 'success')}-color white-text">
+  //       <div class="card-header ${!server.online ? 'danger' : (server.status.lowHR || server.status.badBeat ? 'warning' : 'success')}-color white-text">
   //         <div class="row">
   //           <div class="col-sm">
   //             ${server.name}
@@ -303,6 +313,12 @@ l.log(`Starting v${version}`);
 
 // Initial probe
 probeAll(updateAllSysinfo);
+// probe(servers[1], function() {
+//   console.log(servers[1].online);
+// });
+// updateAllSysinfo(function(){
+//   console.log(servers);
+// });
 
 // Serve index
 app.get('/', function(req, res){

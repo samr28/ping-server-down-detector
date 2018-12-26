@@ -26,7 +26,7 @@ servers.push({
   sysinfoPort: SYSINFO_PORT,
   ip: IP_ADDR,
   port: PING_PORT,
-  isOffline: false,
+  online: false,
   dropdown: false
 });
 
@@ -45,7 +45,7 @@ servers.push({
   },
   api: NOOBPOOL_API,
   sentHRMail: false,
-  isOffline: false,
+  online: false,
   dropdown: false
 });
 
